@@ -26,3 +26,15 @@ func (s *PathSpec) Match(path string) bool {
 	}
 	return s.spec.match(path)
 }
+
+// MatchEntry reports whether a directory entry is matched. Pass isDir for a
+// directory, which is then tested with a trailing slash so that a dir-only
+// pattern (`build/`) matches the directory itself and not only its contents.
+// ansible-lint tests every discovery candidate this way. A nil receiver
+// matches nothing.
+func (s *PathSpec) MatchEntry(path string, isDir bool) bool {
+	if s == nil {
+		return false
+	}
+	return s.spec.matchEntry(path, isDir)
+}

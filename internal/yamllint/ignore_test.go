@@ -177,3 +177,50 @@ func TestIgnoreFromFileMissingWarns(t *testing.T) {
 		t.Error("a pattern file that could not be read must be reported")
 	}
 }
+
+// TestMatchEntryAppendsTheDirSeparator pins what distinguishes MatchEntry from
+// Match: ansible-lint tests every discovery candidate through pathspec's
+// append_dir_sep, so a dir-only pattern matches the directory entry itself and
+// not only the paths inside it. Without that a `build/` entry is descended
+// into and everything below it linted.
+func TestMatchEntryAppendsTheDirSeparator(t *testing.T) {
+	cases := []struct {
+		name     string
+		patterns []string
+		path     string
+		isDir    bool
+		want     bool
+	}{
+		{"dir-only pattern matches the directory itself", []string{"build/"}, "build", true, true},
+		{"dir-only pattern matches inside the directory", []string{"build/"}, "build/x.yml", false, true},
+		{"dir-only pattern does not match a file of that name", []string{"build/"}, "build", false, false},
+		{"dir-only pattern matches a nested directory", []string{"build/"}, "sub/build", true, true},
+		{"dir-only pattern does not match a prefix", []string{"build/"}, "buildx", true, false},
+
+		{"plain name matches a directory", []string{".tox"}, ".tox", true, true},
+		{"plain name matches a file", []string{".tox"}, ".tox", false, true},
+		{"plain name matches inside the directory", []string{".tox"}, ".tox/x.yml", false, true},
+		{"plain name does not match a longer name", []string{".tox"}, ".toxic", true, false},
+
+		{"glob matches a directory candidate", []string{"*.egg-info"}, "pkg.egg-info", true, true},
+		{"anchored pattern matches a directory at the root", []string{"/build"}, "build", true, true},
+		{"anchored pattern does not match at depth", []string{"/build"}, "sub/build", true, false},
+
+		{"negation re-includes a directory", []string{".tox", "!.tox"}, ".tox", true, false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := ParsePathSpec(c.patterns).MatchEntry(c.path, c.isDir); got != c.want {
+				t.Errorf("patterns %q against %q (isDir=%v): got %v, want %v",
+					c.patterns, c.path, c.isDir, got, c.want)
+			}
+		})
+	}
+}
+
+func TestMatchEntryOnANilSpecMatchesNothing(t *testing.T) {
+	var spec *PathSpec
+	if spec.MatchEntry("build", true) {
+		t.Error("an absent spec must not exclude anything")
+	}
+}

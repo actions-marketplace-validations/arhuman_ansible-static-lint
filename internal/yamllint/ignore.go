@@ -57,6 +57,18 @@ func (s *ignoreSpec) match(path string) bool {
 	return ignored
 }
 
+// matchEntry reports whether a directory entry is ignored. A directory
+// candidate is matched with a trailing slash, which is what lets a dir-only
+// pattern (`build/`) match the directory entry itself and not only its
+// contents. pathspec's append_dir_sep does the same to every candidate
+// ansible-lint tests during discovery.
+func (s *ignoreSpec) matchEntry(path string, isDir bool) bool {
+	if isDir {
+		path += "/"
+	}
+	return s.match(path)
+}
+
 // compileIgnore turns one gitignore-style line into a matcher.
 func compileIgnore(line string) (ignorePattern, bool) {
 	// Trailing whitespace is not part of a pattern unless escaped, and a
@@ -108,8 +120,9 @@ func compileIgnore(line string) (ignorePattern, bool) {
 		}
 	}
 	if dirOnly {
-		// The spec only ever matches file paths, so a directory pattern has to
-		// match something inside it.
+		// A directory pattern has to match something inside the directory. The
+		// directory entry itself reaches this through matchEntry, which appends
+		// the trailing slash `.*` then matches as the empty string.
 		b.WriteString("/.*")
 	} else {
 		// A name matches the file itself and, when it names a directory,
