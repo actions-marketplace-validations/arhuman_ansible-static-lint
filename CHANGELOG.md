@@ -8,6 +8,8 @@ All notable changes to this project are documented here. Format:
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-09-12
+
 ### Fixed - 2026-09-12 (issue #5)
 
 - Discovery now excludes what ansible-lint excludes: the builtin list
