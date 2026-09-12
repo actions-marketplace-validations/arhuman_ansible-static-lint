@@ -22,7 +22,7 @@ Keys are spelled as ansible-lint spells them.
 | `skip_list` | rule ids or tags to silence everywhere |
 | `enable_list` | opt-in rule ids to switch on, and rules to keep that `profile` would drop |
 | `warn_list` | rule ids or tags to demote to warning: still printed, with a trailing ` (warning)`, but they do not fail the run |
-| `exclude_paths` | path substrings to skip during discovery |
+| `exclude_paths` | gitignore-style patterns to skip during discovery: a bare name matches at any depth, a slash anchors to the working directory, `!` re-includes |
 | `ignore_file` | path to the ignore file, overridden by `-i` |
 | `loop_var_prefix` | regexp a role `loop_var` must match, `{role}` expanded; unset leaves `loop-var-prefix` inert |
 | `max_tasks` | tasks allowed in a play or task file, default 100 |
@@ -33,6 +33,20 @@ The four selection keys resolve in ansible-lint's order: `profile` picks a rule
 set, `enable_list` adds back to it, `skip_list` subtracts, and `warn_list`
 demotes what survives. A profile name astl does not recognise runs every rule
 and says so on stderr, rather than silently linting nothing.
+
+## What discovery skips on its own
+
+As ansible-lint does, discovery always excludes `.ansible`, `.git`, `.tox`,
+`.mypy_cache`, `__pycache__`, `.DS_Store`, `.coverage`, `.pytest_cache` and
+`.ruff_cache`, and also honours each directory's own `.gitignore`. The builtin
+list and `exclude_paths` form one pattern list, so an `exclude_paths` entry of
+`!.tox` re-includes what the builtin excluded. Two upstream limits are
+reproduced deliberately rather than fixed: a `.gitignore` reaches only the
+directory it sits in, not deeper, and a pattern anchored with a leading slash
+in a nested `.gitignore` never matches. A path named explicitly on the command
+line is linted regardless of any of this. `.venv` is **not** in the builtin
+list, upstream or here; add it to `exclude_paths` or `.gitignore` if you want
+it skipped (ADR 0009).
 
 ## yamllint
 

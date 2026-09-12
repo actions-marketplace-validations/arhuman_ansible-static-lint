@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/arhuman/ansible-static-lint/internal/safeio"
 	"github.com/arhuman/ansible-static-lint/internal/yamllint"
 )
 
@@ -131,17 +132,46 @@ func looksLikeRole(dir string) bool {
 	return false
 }
 
+// builtinExcludes is ansible-lint's own exclude list, the one it merges with
+// the user's exclude_paths before walking a path (`get_all_files`). It is one
+// merged spec there and here, so a user pattern that negates a builtin
+// (`!.tox`) re-includes it, later pattern winning.
+var builtinExcludes = []string{
+	".ansible",
+	".git",
+	".tox",
+	".mypy_cache",
+	"__pycache__",
+	".DS_Store",
+	".coverage",
+	".pytest_cache",
+	".ruff_cache",
+}
+
 // Walk collects lintables under the given roots. excluded is a list of
 // gitignore-style patterns (ansible-lint hands exclude_paths to pathspec's
 // GitIgnoreSpec, issue 0013): an unanchored name matches at any depth, a
 // slash anchors to the working directory, `**` spans segments.
+//
+// Discovery also applies builtinExcludes and, for every directory it enters,
+// that directory's own `.gitignore`. Both reproduce ansible-lint's
+// `get_all_files`, quirks included: a `.gitignore` governs only its
+// directory's immediate children, and patterns are matched against the path
+// accumulated from the walk root, so an anchored pattern in a nested
+// `.gitignore` cannot match anything. A path passed in as a root is exempt
+// from every exclusion, as it is upstream.
 //
 // A root that cannot be stat'ed is fatal and comes back as the error return.
 // Failures on individual entries below a root are collected in soft and the
 // traversal continues, so one unreadable directory does not lose the rest of
 // the run; callers are expected to report them as warnings.
 func Walk(roots []string, excluded []string) (items []Item, soft []error, err error) {
-	w := &walk{wd: WorkingDir(), excluded: yamllint.ParsePathSpec(excluded), seen: map[string]bool{}}
+	w := &walk{
+		wd:         WorkingDir(),
+		excluded:   yamllint.ParsePathSpec(append(append([]string{}, builtinExcludes...), excluded...)),
+		seen:       map[string]bool{},
+		gitignores: map[string]*yamllint.PathSpec{},
+	}
 
 	for _, root := range roots {
 		absRoot, err := filepath.Abs(root)
@@ -152,6 +182,7 @@ func Walk(roots []string, excluded []string) (items []Item, soft []error, err er
 		if _, err := os.Stat(absRoot); err != nil {
 			return nil, w.soft, fmt.Errorf("discover: %w", err)
 		}
+		w.root = absRoot
 		if err := filepath.WalkDir(absRoot, w.visit); err != nil {
 			return nil, w.soft, fmt.Errorf("discover: %w", err)
 		}
@@ -163,13 +194,17 @@ func Walk(roots []string, excluded []string) (items []Item, soft []error, err er
 // walk holds the state the traversal callback accumulates, so that visiting an
 // entry stays a named method instead of a closure over six locals. wd is
 // resolved once per Walk because rendering a display path needs it for every
-// entry.
+// entry. root is the root currently being walked, the one path exclusions do
+// not apply to. gitignores maps a directory to the spec its own `.gitignore`
+// compiled to.
 type walk struct {
-	wd       string
-	excluded *yamllint.PathSpec
-	seen     map[string]bool
-	items    []Item
-	soft     []error
+	wd         string
+	root       string
+	excluded   *yamllint.PathSpec
+	gitignores map[string]*yamllint.PathSpec
+	seen       map[string]bool
+	items      []Item
+	soft       []error
 }
 
 // visit is the filepath.WalkDir callback.
@@ -178,14 +213,14 @@ func (w *walk) visit(p string, d fs.DirEntry, err error) error {
 		w.soft = append(w.soft, err)
 		return nil
 	}
-	if w.excluded.Match(displayPath(w.wd, p)) {
+	if w.isExcluded(p, d.IsDir()) {
 		if d.IsDir() {
 			return fs.SkipDir
 		}
 		return nil
 	}
 	if d.IsDir() {
-		return w.visitDir(p, d.Name())
+		return w.visitDir(p)
 	}
 	target, ok := resolveLink(p, d)
 	if !ok {
@@ -269,16 +304,59 @@ func regularSize(p string, d fs.DirEntry) (int64, bool) {
 	return info.Size(), true
 }
 
-func (w *walk) visitDir(p, name string) error {
-	if name == ".git" || name == "__pycache__" {
-		return fs.SkipDir
+// isExcluded reports whether an entry is dropped from discovery, and the
+// directory it sits in skipped with it.
+//
+// A root is never excluded: ansible-lint checks the items it iterates over,
+// never the path it was handed, so `astl .tox/x.yml` lints that file.
+// Otherwise the entry is tested against the merged builtin and user spec, then
+// against its own parent directory's `.gitignore` alone. That second lookup is
+// deliberately shallow: upstream rebuilds its pathspec list at every level of
+// the recursion, so a `.gitignore` never reaches past its directory's
+// immediate children.
+func (w *walk) isExcluded(p string, isDir bool) bool {
+	if p == w.root {
+		return false
 	}
+	// The wd-relative path is what both specs see, which is also how upstream
+	// leaves an anchored pattern in a nested `.gitignore` matching nothing.
+	rel := displayPath(w.wd, p)
+	return w.excluded.MatchEntry(rel, isDir) || w.gitignores[filepath.Dir(p)].MatchEntry(rel, isDir)
+}
+
+func (w *walk) visitDir(p string) error {
+	w.loadGitignore(p)
 	if isRoleDir(p) {
 		// A role is a directory, so it contributes no source bytes of its own:
 		// the files inside it are discovered and sized separately.
 		w.add(p, KindRole, 0)
 	}
 	return nil
+}
+
+// loadGitignore compiles dir's own `.gitignore`, to be applied to that
+// directory's immediate children and to nothing else. WalkDir is pre-order, so
+// the file is read before the children it governs are visited.
+//
+// A `.gitignore` that exists but cannot be read is a warning: the repository
+// chose the file, and refusing to lint over it would be the worse outcome. The
+// read is bounded and regular-file only because the repository also chose the
+// content, and `.gitignore -> /dev/zero` is a link a checkout can carry.
+func (w *walk) loadGitignore(dir string) {
+	data, err := safeio.ReadFile(filepath.Join(dir, ".gitignore"), safeio.MaxConfigBytes)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			w.soft = append(w.soft, err)
+		}
+		return
+	}
+	lines := strings.Split(string(data), "\n")
+	for i, line := range lines {
+		lines[i] = strings.TrimSuffix(line, "\r")
+	}
+	if spec := yamllint.ParsePathSpec(lines); spec != nil {
+		w.gitignores[dir] = spec
+	}
 }
 
 func (w *walk) add(abs, kind string, size int64) {

@@ -8,6 +8,20 @@ All notable changes to this project are documented here. Format:
 
 ## [Unreleased]
 
+### Fixed - 2026-09-12 (issue #5)
+
+- Discovery now excludes what ansible-lint excludes: the builtin list
+  (`.ansible`, `.git`, `.tox`, `.mypy_cache`, `__pycache__`, `.DS_Store`,
+  `.coverage`, `.pytest_cache`, `.ruff_cache`) and each directory's own
+  `.gitignore`, with upstream's exact scoping. A gitignored `venv/` is no
+  longer linted. `.venv` is deliberately not ignored by default, because
+  ansible-lint does not ignore it either; exclude it via `exclude_paths` or
+  `.gitignore`. ADR 0009.
+- The builtin list and `exclude_paths` form one pattern list, so an
+  `exclude_paths` entry such as `!.tox` re-includes a builtin exclusion.
+- A dir-only `exclude_paths` pattern (`build/`) now prunes the directory
+  itself, as it does upstream.
+
 ## [0.5.0] - 2026-08-29
 
 ### Added - 2026-08-29
