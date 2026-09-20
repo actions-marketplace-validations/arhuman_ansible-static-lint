@@ -156,12 +156,16 @@ func (e *expander) admit(parent Item, t target) (Item, bool) {
 // all. The substring test is what keeps this pass off the critical path: most
 // task files in a repository include nothing, and skipping their parse costs
 // one read of bytes the linter was going to read anyway.
+//
+// The bytes the test read are handed to parse.LoadBytes rather than dropped, so
+// a parent that does mention one is read once here instead of twice. The read
+// stays bounded because it is this function that applies the ceiling.
 func loadForIncludes(it Item) (*parse.File, bool) {
 	data, err := safeio.ReadFile(it.Abs, safeio.MaxLintableBytes)
 	if err != nil || !mentionsInclusion(data) {
 		return nil, false
 	}
-	f := parse.Load(it.Path, it.Abs, it.Kind)
+	f := parse.LoadBytes(it.Path, it.Abs, it.Kind, data)
 	if f.Err != nil || f.Root == nil {
 		return nil, false
 	}
