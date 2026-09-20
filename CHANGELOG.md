@@ -8,6 +8,22 @@ All notable changes to this project are documented here. Format:
 
 ## [Unreleased]
 
+### Added - 2026-09-21
+
+- PyPI distribution: `pipx install ansible-static-lint`. Wheels ship the
+  released binary in `.data/scripts/`, so nothing is rebuilt and no Python
+  interpreter starts at run time. Eight wheels cover linux, macOS and Windows
+  on amd64 and arm64, with the static linux binary serving both manylinux and
+  musllinux.
+- `scripts/build_wheels.py` packs the wheels from the GoReleaser archives.
+  Stdlib only, and byte-reproducible.
+- Wheels carry the archive's SBOM at `dist-info/sboms/astl.spdx.json` and are
+  uploaded via PyPI trusted publishing with PEP 740 attestations. The release
+  job verifies the cosign-signed `checksums.txt` before packing, so a wheel's
+  binary is the one that was signed.
+- A manual `TestPyPI rehearsal` workflow repacks an existing release and
+  publishes it to TestPyPI, so the first real upload is not the first attempt.
+
 ## [0.5.1] - 2026-09-12
 
 ### Fixed - 2026-09-12 (issue #5)

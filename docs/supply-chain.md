@@ -27,3 +27,25 @@ Each archive also ships an SBOM alongside it as
 The GitHub Action downloads a release binary and checks it against these
 published checksums, so a workflow using the action inherits the same guarantee
 without running cosign itself.
+
+## PyPI wheels
+
+The wheels on PyPI are packed from these same archives, not rebuilt. The
+release workflow runs the two verifications above before packing anything, so
+the binary inside a wheel is byte-identical to the one covered by the signature
+you can check here. Each wheel also carries the archive's SBOM at
+`<dist-info>/sboms/astl.spdx.json`.
+
+Wheels are uploaded through PyPI trusted publishing and carry PEP 740
+attestations, which record that this repository's `release.yml` built them.
+Note what each layer proves: the attestation binds the upload to a workflow,
+while the cosign signature above is what binds the binary to its build. PyPI
+verifies the first for you; the second is the check documented here.
+
+```sh
+pip download --no-deps ansible-static-lint
+```
+
+To confirm a wheel's binary against a release, unzip it and compare the
+`.data/scripts/astl` member's SHA-256 with the one in the archive named by
+`checksums.txt` for your platform.

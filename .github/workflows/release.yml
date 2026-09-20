@@ -5,13 +5,17 @@ on:
   push:
     tags: ["v*"]
 
-# Release creates the GitHub Release and uploads assets.
+# Least privilege by default: the pypi job below narrows this further. Granting
+# it at the job level rather than here keeps PyPI upload rights out of the job
+# that holds contents: write.
 permissions:
-  contents: write
-  id-token: write # cosign keyless signing (OIDC), per .goreleaser.yaml signs:
+  contents: read
 
 jobs:
   goreleaser:
+    permissions:
+      contents: write # create the Release and upload assets
+      id-token: write # cosign keyless signing (OIDC), per .goreleaser.yaml signs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -33,3 +37,75 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Separate job, not a step in goreleaser: a PyPI version is permanent and
+  # cannot be re-uploaded, so a failed upload must be re-runnable without
+  # re-running goreleaser against an already-published release. It also keeps
+  # the OIDC identity that signs with cosign apart from the one PyPI trusts.
+  pypi:
+    name: Publish wheels to PyPI
+    needs: goreleaser
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: read # download the release assets
+      id-token: write # PyPI trusted publishing (OIDC), and PEP 740 attestations
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      # The wheels must carry the binaries goreleaser signed, not a rebuild.
+      # Verify the cosign bundle over checksums.txt, then the archives against
+      # checksums.txt, before anything is packed. Trusted publishing proves who
+      # uploaded and PEP 740 proves which workflow built, but neither proves the
+      # binary inside matches what was signed. This step is what does.
+      - name: Download and verify release artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist/archives
+          gh release download "$GITHUB_REF_NAME" --dir dist/archives \
+            --pattern '*.tar.gz' --pattern '*.zip' --pattern '*.sbom.json' \
+            --pattern 'checksums.txt' --pattern 'checksums.txt.sigstore.json'
+          cosign verify-blob \
+            --bundle dist/archives/checksums.txt.sigstore.json \
+            --certificate-identity-regexp '^https://github.com/${{ github.repository }}/' \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            dist/archives/checksums.txt
+          cd dist/archives && sha256sum --check checksums.txt
+
+      - name: Build wheels
+        run: |
+          set -euo pipefail
+          # PEP 440 has no leading v and the tag has one, so strip it. The
+          # binary still reports v0.5.1: .goreleaser.yaml re-adds the prefix so
+          # every install path prints one string. Only the wheel differs.
+          python scripts/build_wheels.py \
+            --version "${GITHUB_REF_NAME#v}" \
+            --archives dist/archives \
+            --out dist/wheels
+          ls -1 dist/wheels
+          # A pure-Python tag would let pip install a Linux binary on Windows.
+          if compgen -G 'dist/wheels/*-any.whl' >/dev/null; then
+            echo "refusing to publish a py3-none-any wheel" >&2
+            exit 1
+          fi
+
+      - name: Smoke test the linux wheel
+        run: |
+          set -euo pipefail
+          python -m venv /tmp/v
+          /tmp/v/bin/pip install --no-index --find-links dist/wheels ansible-static-lint
+          # Fails if the binary installed without its exec bit.
+          test -x /tmp/v/bin/astl
+          /tmp/v/bin/astl --version
+          /tmp/v/bin/astl --help >/dev/null
+
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          packages-dir: dist/wheels
+          attestations: true

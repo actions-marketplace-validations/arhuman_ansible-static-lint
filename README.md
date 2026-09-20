@@ -42,6 +42,18 @@ Linux, macOS and Windows, amd64 and arm64, are on the
 release ships checksums signed with cosign; see
 [docs/supply-chain.md](docs/supply-chain.md) to verify one.
 
+**From PyPI**, if you already manage ansible-lint with pip or pipx:
+
+```sh
+pipx install ansible-static-lint
+astl path/to/playbooks
+```
+
+The wheel carries the same binary as the release archive above, so there is
+still no Python at runtime: no interpreter starts when you run `astl`. Python
+is only the delivery mechanism. `pip install ansible-static-lint` works too, in
+a virtualenv.
+
 **In GitHub Actions.** Two lines, and the action fetches and checksum-verifies
 the binary for you:
 
