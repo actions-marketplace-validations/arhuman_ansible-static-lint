@@ -15,13 +15,6 @@ All notable changes to this project are documented here. Format:
   the argument with the unpinned value as its default. astl now covers 39 of
   ansible-lint's 51 default rules, and the golden carries 2387 findings.
 
-### Fixed - 2026-09-21
-
-- A `# noqa` on one task inside a `block`/`rescue`/`always` no longer silences
-  its siblings. The block container collected suppressions across its whole
-  span, where ansible-lint attaches them to each task on its own. No shipped
-  rule could reach the case, which is why no finding changed until now.
-
 - PyPI distribution: `pipx install ansible-static-lint`. Wheels ship the
   released binary in `.data/scripts/`, so nothing is rebuilt and no Python
   interpreter starts at run time. Eight wheels cover linux, macOS and Windows
@@ -35,6 +28,13 @@ All notable changes to this project are documented here. Format:
   binary is the one that was signed.
 - A manual `TestPyPI rehearsal` workflow repacks an existing release and
   publishes it to TestPyPI, so the first real upload is not the first attempt.
+
+### Fixed - 2026-09-21
+
+- A `# noqa` on one task inside a `block`/`rescue`/`always` no longer silences
+  its siblings. The block container collected suppressions across its whole
+  span, where ansible-lint attaches them to each task on its own. No shipped
+  rule could reach the case, which is why no finding changed until now.
 
 ## [0.5.1] - 2026-09-12
 
