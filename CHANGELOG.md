@@ -8,6 +8,8 @@ All notable changes to this project are documented here. Format:
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-21
+
 ### Added - 2026-09-21
 
 - `latest` (`latest[git]`, `latest[hg]`): a version control checkout left on
