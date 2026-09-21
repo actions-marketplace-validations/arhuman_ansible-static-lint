@@ -88,7 +88,14 @@ jobs:
           # Fails if the binary installed without its exec bit.
           test -x /tmp/v/bin/astl
           /tmp/v/bin/astl --version
-          /tmp/v/bin/astl --help >/dev/null
+          # --help exits 1 like any Go flag package usage message, so check the
+          # usage text rather than the exit code. Capture before testing: a
+          # grep -q would close the pipe early and trip pipefail on SIGPIPE.
+          help=$(/tmp/v/bin/astl --help 2>&1 || true)
+          case "$help" in
+            "usage: astl"*) ;;
+            *) echo "astl --help printed no usage text" >&2; exit 1 ;;
+          esac
 
       - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
