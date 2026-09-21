@@ -41,7 +41,6 @@ var OutOfScope = []OutOfScopeRule{
 	{"no-free-form", "Ansible's argument splitter semantics as data"},
 	{"deprecated-module", "upstream's deprecated-module inventory as data"},
 
-	{"latest", "nothing: static, not implemented yet"},
 	{"no-same-owner", "nothing: static, not implemented yet"},
 	{"role-argument-spec", "nothing: static, not implemented yet"},
 }

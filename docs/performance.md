@@ -7,7 +7,7 @@ Why astl is fast, what that costs, and what guards the property.
 Measured on Apple Silicon macOS against ansible-lint 26.8.0
 (Python 3.14, `--offline`), on ansible-lint's own examples corpus:
 
-| Metric | ansible-lint | astl (38 rules) |
+| Metric | ansible-lint | astl (39 rules) |
 |---|---|---|
 | Cold start (`--version`) | 0.52 s | 2.2 ms |
 | One 6-line playbook | 2.1 s | 2.5 ms |
@@ -15,7 +15,7 @@ Measured on Apple Silicon macOS against ansible-lint 26.8.0
 | Max RSS on the corpus | 123 MiB | 42 MiB |
 
 Read the ratios with care: the comparison is asymmetric, since ansible-lint is
-also running its syntax-check subprocess and the 13 rules astl excludes. The
+also running its syntax-check subprocess and the 12 rules astl excludes. The
 honest headline numbers are cold start and the single playbook, where the gap
 is interpreter and import overhead that exists before any rule runs; even
 `ansible-lint --version` costs half a second.

@@ -102,6 +102,7 @@ func taskRules(f *parse.File, opt Options) []Finding {
 		out = append(out, deprecatedBareVars(f, t)...)
 		out = append(out, partialBecomeTask(f, t)...)
 		out = append(out, packageLatest(f, t)...)
+		out = append(out, latestCheckout(f, t)...)
 		out = append(out, keyOrderTask(f, t)...)
 		out = append(out, roleNamePathTask(f, t)...)
 		out = append(out, nameTask(f, t)...)
@@ -297,6 +298,35 @@ func packageLatest(f *parse.File, t *parse.Task) []Finding {
 	return []Finding{onLine(f, t.Pos.Line, "package-latest",
 		"Package installs should not use latest.",
 		"This package has no pinned version. Pin one so installs stay reproducible.")}
+}
+
+// latestCheckout reports a version control checkout left on its moving default.
+//
+// Upstream reads the argument with a default equal to the unpinned value, so a
+// missing `version`/`revision` is a finding exactly as an explicit `HEAD` or
+// `default` is: `git:` with no version at all is the common case in the corpus.
+//
+// Both tags carry the same upstream message. It is the rule class's docstring,
+// not the per-tag wording in upstream's `_ids` table, which ansible-lint uses
+// for its documentation index rather than for the finding.
+func latestCheckout(f *parse.File, t *parse.Task) []Finding {
+	switch t.Module {
+	case "git":
+		if t.HasArg("version") && t.ArgText("version") != "HEAD" {
+			return nil
+		}
+		return []Finding{onLine(f, t.Pos.Line, "latest[git]",
+			"Result of the command may vary on subsequent runs.",
+			"This git checkout tracks HEAD. Pin a commit or tag to keep runs reproducible.")}
+	case "hg":
+		if t.HasArg("revision") && t.ArgText("revision") != "default" {
+			return nil
+		}
+		return []Finding{onLine(f, t.Pos.Line, "latest[hg]",
+			"Result of the command may vary on subsequent runs.",
+			"This hg checkout tracks the default branch. Pin a revision to keep runs reproducible.")}
+	}
+	return nil
 }
 
 func roleNamePathTask(f *parse.File, t *parse.Task) []Finding {

@@ -1,24 +1,24 @@
 # The static frontier, measured
 
 astl implements the ansible-lint rules that can be decided from the YAML
-source alone: 38 of the 51 default rules. This document quantifies what the
-other 13 would cost, so that "static only" is a measured boundary rather than
+source alone: 39 of the 51 default rules. This document quantifies what the
+other 12 would cost, so that "static only" is a measured boundary rather than
 a slogan.
 
 ## Method
 
 On ansible-lint's own test corpus (478 YAML files), ansible-lint 26.8.0
 (`--offline`) reports **2648 findings**. Filtering that output
-to the 38 rules astl implements leaves **2381 findings**; the frozen golden
-carries 2370 of them and astl reproduces all 2370 byte for byte (see the
+to the 39 rules astl implements leaves **2398 findings**; the frozen golden
+carries 2387 of them and astl reproduces all 2387 byte for byte (see the
 compatibility harness; the 11-finding difference is environment drift in
 upstream itself, accounted below). The gap analyzed here is the remaining
-**267 findings**: the per-rule distribution below is computed by subtracting
+**250 findings**: the per-rule distribution below is computed by subtracting
 the in-scope output from the full output, and the "what it requires" column
 comes from reading each upstream rule's implementation and imports, not from
 guessing.
 
-## Distribution of the 267 out-of-scope findings
+## Distribution of the 250 out-of-scope findings
 
 | What reproducing the rule requires | Rules | Findings |
 |---|---|---|
@@ -26,13 +26,12 @@ guessing.
 | Upstream's JSON Schema bundle | `schema` | 56 |
 | Evaluating Jinja templates with Ansible's filters | `jinja` | 31 |
 | Ansible's argument splitter semantics as data | `no-free-form` | 30 |
-| Nothing: static, just not implemented yet | `latest` | 17 |
 | Upstream environment drift: module resolution changes what one rule sees | `risky-file-permissions` | 11 |
 | Output artifact of the corpus run | | 1 |
 
 ## Reading the table
 
-- **88% of the gap requires capabilities astl deliberately does not have.**
+- **99% of the gap requires capabilities astl deliberately does not have.**
   `syntax-check` is a subprocess running `ansible-playbook`; `fqcn` resolves
   module names through Ansible's plugin loader; `args` validates against
   module argument specs; `internal-error` and `load-failure` are Ansible's own
@@ -51,8 +50,9 @@ guessing.
   [docs/design/static-yaml-and-var-naming.md](design/static-yaml-and-var-naming.md).
 - **`no-free-form` stays out for now** on the same argument-splitter grounds
   that `var-naming` used to sit on; it is the next candidate of that class.
-- **`latest` remains the one honest exception.** It is plainly static and
-  simply not implemented yet.
+- **`latest` moved inside the boundary in 2026-09**, and with it the last row
+  that required nothing but the work. Every finding left in the table above now
+  names a capability astl does not have, rather than one it has not written.
 - **The `risky-file-permissions` lines measure upstream, not astl.** The same
   pinned ansible-lint version reports 11 findings more or fewer on one fixture
   depending on which collections its environment resolves. The frozen golden

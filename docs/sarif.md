@@ -100,7 +100,7 @@ The run carries `properties["astl.scope"]`:
 ```
 
 This is the part that keeps a fast pass honest. Three lists answer three
-different questions: `supported` names the 38 rules astl implements at all
+different questions: `supported` names the 39 rules astl implements at all
 (its capability boundary, including 5 opt-in rules the default profile does
 not run), `enabled` names the subset this run actually turned on after
 applying the profile, `skip_list` and `enable_list`, and `outOfScope` names

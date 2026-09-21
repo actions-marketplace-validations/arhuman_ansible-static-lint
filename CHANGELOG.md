@@ -10,6 +10,18 @@ All notable changes to this project are documented here. Format:
 
 ### Added - 2026-09-21
 
+- `latest` (`latest[git]`, `latest[hg]`): a version control checkout left on
+  its moving default. A missing `version`/`revision` counts, as upstream reads
+  the argument with the unpinned value as its default. astl now covers 39 of
+  ansible-lint's 51 default rules, and the golden carries 2387 findings.
+
+### Fixed - 2026-09-21
+
+- A `# noqa` on one task inside a `block`/`rescue`/`always` no longer silences
+  its siblings. The block container collected suppressions across its whole
+  span, where ansible-lint attaches them to each task on its own. No shipped
+  rule could reach the case, which is why no finding changed until now.
+
 - PyPI distribution: `pipx install ansible-static-lint`. Wheels ship the
   released binary in `.data/scripts/`, so nothing is rebuilt and no Python
   interpreter starts at run time. Eight wheels cover linux, macOS and Windows

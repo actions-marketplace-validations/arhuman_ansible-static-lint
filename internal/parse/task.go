@@ -74,6 +74,34 @@ type Task struct {
 // BlockModule is the synthetic module name ansible-lint gives block containers.
 const BlockModule = "block/always/rescue"
 
+// BlockHeaderEnd returns the last line of a block task that belongs to the
+// block itself rather than to a nested task, so a caller can read a block's own
+// comments without reaching into its children. It is the line before the first
+// `block:`/`rescue:`/`always:` value starts; for a node holding none, or one
+// whose nested key comes first, it is the node's own line.
+func BlockHeaderEnd(node *yaml.Node) int {
+	start := NodePos(node).Line
+	first := 0
+	for _, k := range nestedTaskKeys {
+		v := MapGet(node, k)
+		if v == nil {
+			continue
+		}
+		if line := NodePos(v).Line; first == 0 || line < first {
+			first = line
+		}
+	}
+	if first == 0 {
+		return start
+	}
+	// The nested key's own line still belongs to the block: a noqa there is the
+	// block's, so the header ends on it rather than before it.
+	if header := first - 1; header > start {
+		return header
+	}
+	return start
+}
+
 // RawHas reports whether the raw task mapping contains key.
 func (t *Task) RawHas(key string) bool { return MapHas(t.Node, key) }
 

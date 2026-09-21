@@ -221,6 +221,104 @@ func TestTaskRules(t *testing.T) {
 			want: nil,
 		},
 		{
+			name: "latest[git] on a checkout with no version",
+			path: "playbooks/p.yml",
+			content: `---
+- name: Fixture
+  hosts: localhost
+  tasks:
+    - name: Clone
+      ansible.builtin.git:
+        repo: https://example.com/r.git
+`,
+			want: []string{"latest[git]"},
+		},
+		{
+			name: "latest[git] on an explicit HEAD",
+			path: "playbooks/p.yml",
+			content: `---
+- name: Fixture
+  hosts: localhost
+  tasks:
+    - name: Clone
+      ansible.builtin.git:
+        repo: https://example.com/r.git
+        version: HEAD
+`,
+			want: []string{"latest[git]"},
+		},
+		{
+			name: "latest[git] is silenced by a pinned version",
+			path: "playbooks/p.yml",
+			content: `---
+- name: Fixture
+  hosts: localhost
+  tasks:
+    - name: Clone
+      ansible.builtin.git:
+        repo: https://example.com/r.git
+        version: v1.2.3
+`,
+			want: nil,
+		},
+		{
+			name: "latest[git] reads a free-form action",
+			path: "playbooks/p.yml",
+			content: `---
+- name: Fixture
+  hosts: localhost
+  tasks:
+    - name: Clone
+      action: ansible.builtin.git repo=. clone=no
+`,
+			want: []string{"latest[git]"},
+		},
+		{
+			name: "latest[hg] on a checkout with no revision",
+			path: "playbooks/p.yml",
+			content: `---
+- name: Fixture
+  hosts: localhost
+  tasks:
+    - name: Clone
+      ansible.builtin.hg:
+        repo: https://example.com/r
+`,
+			want: []string{"latest[hg]"},
+		},
+		{
+			name: "latest[hg] is silenced by a pinned revision",
+			path: "playbooks/p.yml",
+			content: `---
+- name: Fixture
+  hosts: localhost
+  tasks:
+    - name: Clone
+      ansible.builtin.hg:
+        repo: https://example.com/r
+        revision: 4f2a1b
+`,
+			want: nil,
+		},
+		{
+			name: "a noqa inside a block does not silence its siblings",
+			path: "playbooks/p.yml",
+			content: `---
+- name: Fixture
+  hosts: localhost
+  tasks:
+    - name: Wrapper
+      block:
+        - name: Skipped # noqa: latest[git]
+          ansible.builtin.git:
+            repo: https://example.com/a.git
+        - name: Reported
+          ansible.builtin.git:
+            repo: https://example.com/b.git
+`,
+			want: []string{"latest[git]"},
+		},
+		{
 			name: "key-order[task] wants name first",
 			path: "playbooks/p.yml",
 			content: `---
