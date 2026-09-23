@@ -8,6 +8,16 @@ All notable changes to this project are documented here. Format:
 
 ## [Unreleased]
 
+### Changed - 2026-09-23
+
+- `docs/scope.md` lists all 12 unsupported rule IDs, including the four that
+  report nothing on this corpus (`deprecated-module`, `no-same-owner`,
+  `only-builtins`, `role-argument-spec`), so the twelve can be found in one
+  place rather than inferred from a subtraction.
+- "51 default rules" reads "51 built-in rule IDs" in the README and
+  `docs/scope.md`, since three of the twelve are opt-in and never run by
+  default.
+
 ### Fixed - 2026-09-23
 
 - Documented performance figures now match what the current binary measures.

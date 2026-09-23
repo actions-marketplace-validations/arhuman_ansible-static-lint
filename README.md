@@ -12,8 +12,8 @@ setup, near-instant feedback. The command is `astl`.
 **Same config file. Same rule ids. Same `# noqa` comments. Same output.**
 
 astl is a Go reimplementation of the [ansible-lint](https://github.com/ansible/ansible-lint)
-rules that can be decided from the YAML source alone: 39 of the 51 default
-rules, reproducing ansible-lint's `-f pep8` output byte for byte within that
+rules that can be decided from the YAML source alone: 39 of the 51 built-in
+rule IDs, reproducing ansible-lint's `-f pep8` output byte for byte within that
 scope. It is **not** a drop-in replacement for ansible-lint and does not try to
 become one: keep ansible-lint where its runtime matters, for syntax check,
 collection resolution, schema validation and `--fix`.

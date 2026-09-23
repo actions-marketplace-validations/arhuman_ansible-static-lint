@@ -1,7 +1,7 @@
 # The static frontier, measured
 
 astl implements the ansible-lint rules that can be decided from the YAML
-source alone: 39 of the 51 default rules. This document quantifies what the
+source alone: 39 of the 51 built-in rule IDs. This document quantifies what the
 other 12 would cost, so that "static only" is a measured boundary rather than
 a slogan.
 
@@ -27,6 +27,7 @@ guessing.
 | Evaluating Jinja templates with Ansible's filters | `jinja` | 31 |
 | Ansible's argument splitter semantics as data | `no-free-form` | 30 |
 | Upstream environment drift: module resolution changes what one rule sees | `risky-file-permissions` | 11 |
+| Nothing on this corpus: three are opt-in, one matches no fixture | `deprecated-module`, `no-same-owner`, `only-builtins`, `role-argument-spec` | 0 |
 | Output artifact of the corpus run | | 1 |
 
 ## Reading the table
@@ -48,6 +49,14 @@ guessing.
   bundled policy the way ansible-lint layers it. The design and the parity
   evidence are in
   [docs/design/static-yaml-and-var-naming.md](design/static-yaml-and-var-naming.md).
+- **Four rules cost nothing measurable here, which is not the same as being
+  free.** `no-same-owner`, `only-builtins` and `role-argument-spec` are opt-in,
+  so a default run never raises them, and `deprecated-module` matches no fixture
+  in this corpus. They are listed at 0 so the twelve unsupported IDs can all be
+  found in one place; on a repository that enables the opt-ins or uses a
+  deprecated module, they would report. `deprecated-module` needs the module
+  list ansible-core ships, the same class of vendored data `var-naming` uses,
+  and is the cheapest of the twelve to add.
 - **`no-free-form` stays out for now** on the same argument-splitter grounds
   that `var-naming` used to sit on; it is the next candidate of that class.
 - **`latest` moved inside the boundary in 2026-09**, and with it the last row
