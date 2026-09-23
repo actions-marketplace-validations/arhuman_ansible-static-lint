@@ -8,6 +8,14 @@ All notable changes to this project are documented here. Format:
 
 ## [Unreleased]
 
+### Fixed - 2026-09-23
+
+- Documented performance figures now match what the current binary measures.
+  The corpus row read 37 ms against a measured 59 ms, stale since the `latest`
+  rule and the gitignore-semantics discovery landed; the speed guard never
+  caught it because 59 ms is still inside its 150 ms budget. Cold start, the
+  single-playbook row and both RSS figures were remeasured at the same time.
+
 ## [0.6.0] - 2026-09-21
 
 ### Added - 2026-09-21

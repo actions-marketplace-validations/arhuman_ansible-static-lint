@@ -23,7 +23,7 @@ collection resolution, schema validation and `--fix`.
 | Runtime dependencies | none, one static binary |
 | ansible-lint rules supported | 39 of 51 |
 | Output conformance within that scope | 2387 / 2387 findings, byte for byte |
-| 478-file corpus | 37 ms, against 46.8 s |
+| 478-file corpus | 59 ms, against 39.5 s |
 
 ## Try it on your repository
 
@@ -103,7 +103,7 @@ astl has no Ansible runtime and never shells out. It therefore does not:
 | The 12 runtime-dependent rules | no | yes |
 | `--fix` | no | yes |
 | Needs Python and an Ansible install | no | yes |
-| Cold start | 2.2 ms | 0.52 s |
+| Cold start | 3.3 ms | 0.49 s |
 
 That is the trade-off: astl handles every check that can be decided from the
 source alone and leaves runtime-dependent validation to ansible-lint. The
@@ -143,14 +143,17 @@ compatibility; see ADR 0004 for the reasoning and its limits.
 ## How fast?
 
 Measured on Apple Silicon macOS against ansible-lint 26.8.0
-(Python 3.14, `--offline`), on ansible-lint's own examples corpus:
+(Python 3.14, `--offline`), on ansible-lint's own examples corpus. `make
+bench-compare` in the
+[compatibility repository](https://github.com/arhuman/astl-compatibility-check)
+reproduces every row:
 
 | Metric | ansible-lint | astl (39 rules) |
 |---|---|---|
-| Cold start (`--version`) | 0.52 s | 2.2 ms |
-| One 6-line playbook | 2.1 s | 2.5 ms |
-| 478-file corpus | 46.8 s | 37 ms |
-| Max RSS on the corpus | 123 MiB | 42 MiB |
+| Cold start (`--version`) | 0.49 s | 3.3 ms |
+| One 6-line playbook | 2.0 s | 3.6 ms |
+| 478-file corpus | 39.5 s | 59 ms |
+| Max RSS on the corpus | 129 MiB | 42 MiB |
 
 Read the ratios with care: the comparison is asymmetric, since ansible-lint is
 also running its syntax-check subprocess and the 12 rules astl excludes. The
@@ -158,9 +161,10 @@ honest headline numbers are cold start and the single playbook, where the gap
 is interpreter and import overhead that exists before any rule runs; even
 `ansible-lint --version` costs half a second.
 
-`make bench` fails the build if linting the reference corpus exceeds 150 ms,
-roughly five times the current time, so the property is guarded rather than
-assumed. Why the numbers look like this is in
+`make bench` fails the build if linting the reference corpus exceeds 150 ms, so
+the property is guarded rather than assumed. That guard is one-sided by design:
+it times astl alone. The two-linter comparison above is `make bench-compare`.
+Why the numbers look like this is in
 [docs/performance.md](docs/performance.md).
 
 ## Using astl in CI
