@@ -15,6 +15,10 @@ All notable changes to this project are documented here. Format:
   rule and the gitignore-semantics discovery landed; the speed guard never
   caught it because 59 ms is still inside its 150 ms budget. Cold start, the
   single-playbook row and both RSS figures were remeasured at the same time.
+- The extra-findings count read 46 in the README and `docs/scope.md` where the
+  pinned set in the compatibility harness holds 48.
+- The README's Rules section said 38 static rules where the rest of the
+  documentation says 39.
 
 ## [0.6.0] - 2026-09-21
 

@@ -125,7 +125,7 @@ Two numbers, and they measure different things:
 | Coverage of all ansible-lint findings on the corpus | 2387 / 2648 (90.1%) |
 
 Within its scope, astl agrees with ansible-lint on every finding: same file,
-same line, same column, same message, byte for byte. It also emits 46 findings
+same line, same column, same message, byte for byte. It also emits 48 findings
 ansible-lint does not, all on files ansible-lint abandons because its embedded
 runtime rejects them. Those extras are pinned line for line as an exact set:
 the harness fails if the set changes in either direction, so a new false
@@ -212,7 +212,7 @@ what does not count as unchecked.
 
 ## Rules
 
-38 static rules are supported; the full equivalence table between astl's
+39 static rules are supported; the full equivalence table between astl's
 `domain.rule[tag]` identifiers and ansible-lint's is in
 [docs/rules.md](docs/rules.md). `internal/rules/ids.go` is the single source
 both taxonomies are derived from.

@@ -62,7 +62,7 @@ guessing.
 
 Because it has no runtime to fail, astl keeps linting files whose references
 Ansible cannot resolve. ansible-lint abandons such files and reports only the
-load failure; astl reports what the YAML says. On the corpus this produces 46
+load failure; astl reports what the YAML says. On the corpus this produces 48
 findings ansible-lint does not emit, all on files upstream's embedded runtime
 rejects. They are pinned line for line as an exact set in the compatibility
 harness, which fails if the set changes in either direction, so a genuine
