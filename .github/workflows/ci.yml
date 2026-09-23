@@ -110,6 +110,46 @@ jobs:
       - name: Assert the corpus lints within its budget
         run: make -C ansible-static-lint bench
 
+  action:
+    name: action (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Runs the action against the examples fixture, which has a frozen
+      # expected output and a known exit code. Asserting both is what separates
+      # "the action ran" from "the action produced the right findings".
+      #
+      # This exercises the published release, not the working tree: the action
+      # downloads a release archive by design, so a change to the archive layout
+      # is only proven by the run that follows its release. Keep the version
+      # pinned to the newest release rather than `latest`, so a failure here
+      # names a known binary instead of drifting under the job.
+      - id: run
+        uses: ./
+        with:
+          paths: examples
+          version: "0.6.0"
+          output: astl-out.txt
+          fail-on-findings: "false"
+      - name: Assert exit code and output
+        shell: bash
+        env:
+          CODE: ${{ steps.run.outputs.exit-code }}
+        run: |
+          set -euo pipefail
+          if [ "$CODE" != "2" ]; then
+            echo "::error::expected exit code 2 (violations found), got $CODE" >&2
+            exit 1
+          fi
+          # astl normalizes every emitted path with filepath.ToSlash, so the
+          # fixture is byte-comparable on Windows too; .gitattributes keeps the
+          # checked-out fixture LF so only real differences show up here.
+          diff -u examples/expected.txt astl-out.txt
+
   commitlint:
     name: commit messages
     runs-on: ubuntu-latest

@@ -33,6 +33,19 @@ checksums, so the job needs neither Go nor Python. Its inputs are `paths`,
 Pin it to a commit SHA if your policy requires it, as this repository does for
 its own workflows.
 
+It runs on `ubuntu-latest`, `macos-latest` and `windows-latest`, amd64 and
+arm64. Windows needs no Python, no WSL and no container, which is the case a
+collection targeting Windows hosts usually has to work around:
+
+```yaml
+jobs:
+  ansible:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: arhuman/ansible-static-lint@v0.6.0
+```
+
 Without the action, install the binary yourself:
 
 ```yaml

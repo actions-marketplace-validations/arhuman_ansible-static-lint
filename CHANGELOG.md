@@ -8,6 +8,16 @@ All notable changes to this project are documented here. Format:
 
 ## [Unreleased]
 
+### Added - 2026-09-23
+
+- The GitHub Action runs on Windows runners. It already shipped Windows
+  binaries; the action rejected any runner that was not Linux or macOS, so
+  `runs-on: windows-latest` needed a manual download. It now selects the `.zip`
+  archive and `astl.exe`, and resolves the native path Windows needs on `PATH`.
+- A CI job runs the action on `ubuntu-latest`, `macos-latest` and
+  `windows-latest` against the `examples` fixture, asserting both the exit code
+  and the exact output. Nothing tested the action before.
+
 ### Changed - 2026-09-23
 
 - `docs/scope.md` lists all 12 unsupported rule IDs, including the four that

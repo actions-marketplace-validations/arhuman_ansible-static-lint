@@ -1,0 +1,4 @@
+# The examples fixture is compared byte for byte against astl's stdout, which
+# is LF on every platform. Without this, a Windows checkout rewrites it to CRLF
+# and the comparison fails for a reason unrelated to the linter.
+examples/expected.txt text eol=lf
