@@ -5,8 +5,8 @@ the most out of it runs both, at different frequencies:
 
 | Tier | When | What runs | Why |
 |---|---|---|---|
-| Fast | every push and pull request | `astl` | seconds, and it covers the 39 rules that block most pipelines |
-| Deep | merge to the default branch, or nightly | `ansible-lint` | the 12 runtime-dependent rules astl cannot decide ([scope.md](scope.md)) |
+| Fast | every push and pull request | `astl` | seconds, and it covers the 40 rules that block most pipelines |
+| Deep | merge to the default branch, or nightly | `ansible-lint` | the 11 runtime-dependent rules astl cannot decide ([scope.md](scope.md)) |
 
 Adopting the fast tier costs no configuration. The default `--ids upstream`
 keeps ansible-lint's rule identifiers, so an existing `.ansible-lint`

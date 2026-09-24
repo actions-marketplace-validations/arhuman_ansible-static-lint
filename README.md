@@ -22,7 +22,7 @@ collection resolution, schema validation and `--fix`.
 |---|---|
 | Runtime dependencies | none, one static binary |
 | ansible-lint rules supported | 40 of 51 |
-| Output conformance within that scope | 2387 / 2387 findings, byte for byte |
+| Output conformance within that scope | 2417 / 2417 findings, byte for byte |
 | 478-file corpus | 59 ms, against 39.5 s |
 
 ## Try it on your repository
@@ -86,6 +86,43 @@ ansible-lint config file, astl reads it as is: `profile`, `skip_list`,
 existing `# noqa` comments. More in
 [docs/configuration.md](docs/configuration.md).
 
+### Ansible linting on Windows, without WSL or Ansible
+
+ansible-lint does not target Windows: it ships `Operating System :: MacOS`
+and `:: POSIX` classifiers and depends on ansible-core, whose control node is
+POSIX-only. The usual answer is WSL, a container, or a Linux CI runner. astl
+needs no runtime at all, so a native Windows binary lints the same playbooks
+from PowerShell directly.
+
+```powershell
+$TAG = "v0.6.0"
+$VERSION = $TAG.TrimStart("v")
+Invoke-WebRequest "https://github.com/arhuman/ansible-static-lint/releases/download/$TAG/ansible-static-lint_${VERSION}_windows_amd64.zip" -OutFile astl.zip
+Expand-Archive astl.zip -DestinationPath .
+.\astl.exe path\to\playbooks
+```
+
+`pipx install ansible-static-lint` works the same way it does elsewhere, and
+still starts no interpreter at run time. Windows wheels ship for amd64 and
+arm64.
+
+In GitHub Actions the action runs on Windows runners too:
+
+```yaml
+runs-on: windows-latest
+steps:
+  - uses: actions/checkout@v7
+  - uses: arhuman/ansible-static-lint@v0.6.0
+```
+
+What you do **not** need: WSL, a Linux container, a Python interpreter,
+ansible-core, or a Visual C++ redistributable. The binary is statically linked
+and `astl.exe` is the whole install.
+
+The rules are the same 40 on every platform. Paths in the output use the
+separator the platform reports, and a repository's `.ansible-lint` config is
+read identically.
+
 ## Why static?
 
 astl has no Ansible runtime and never shells out. It therefore does not:
@@ -121,8 +158,8 @@ Two numbers, and they measure different things:
 
 | Metric | Value |
 |---|---|
-| Conformance within the supported scope | **2387 / 2387** golden findings reproduced (100%) |
-| Coverage of all ansible-lint findings on the corpus | 2387 / 2648 (90.1%) |
+| Conformance within the supported scope | **2417 / 2417** golden findings reproduced (100%) |
+| Coverage of all ansible-lint findings on the corpus | 2417 / 2648 (91.3%) |
 
 Within its scope, astl agrees with ansible-lint on every finding: same file,
 same line, same column, same message, byte for byte. It also emits 55 findings

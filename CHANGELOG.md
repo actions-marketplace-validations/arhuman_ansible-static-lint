@@ -10,6 +10,13 @@ All notable changes to this project are documented here. Format:
 
 ### Added - 2026-09-24
 
+- The README states the Windows case plainly: ansible-lint ships MacOS and
+  POSIX classifiers and needs ansible-core, so linting playbooks on Windows
+  normally means WSL, a container or a Linux runner. astl needs none of them.
+  The section carries a PowerShell download, the `pipx` path and the Actions
+  snippet, and says what is not required. The binaries and wheels already
+  shipped; the claim did not.
+
 - `no-free-form` (`no-free-form[raw]`, `no-free-form[raw-non-string]`): the
   shorthand `module: key=value ...` syntax, which ansible re-parses with its
   argument splitter and which hides quoting bugs. `command`, `shell`,
