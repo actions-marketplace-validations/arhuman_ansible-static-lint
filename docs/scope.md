@@ -24,7 +24,7 @@ guessing.
 |---|---|---|
 | Running Ansible's loader: syntax check, module and role resolution | `syntax-check`, `fqcn`, `args`, `internal-error`, `load-failure` | 131 |
 | Upstream's JSON Schema bundle | `schema` | 56 |
-| Evaluating Jinja templates with Ansible's filters | `jinja` | 31 |
+| Reproducing Black's expression formatting, and evaluating Jinja templates with Ansible's filters | `jinja` | 31 |
 | Upstream environment drift: module resolution changes what one rule sees | `risky-file-permissions` | 11 |
 | Nothing on this corpus: three are opt-in, one matches no fixture | `deprecated-module`, `no-same-owner`, `only-builtins`, `role-argument-spec` | 0 |
 | Output artifact of the corpus run | | 1 |
@@ -38,6 +38,20 @@ guessing.
   loader failures surfaced as findings. `jinja` evaluates templates with
   Ansible's filter set, and `schema` validates against the JSON Schema bundle
   upstream maintains.
+- **`jinja` is mostly `[spacing]`**: a direct run of the pinned upstream over
+  this corpus reports 25 `jinja[spacing]` and 3 `jinja[invalid]` (28 of the 31
+  the table attributes to the rule; the remaining 3 sit inside the same
+  environment drift the `risky-file-permissions` row below describes).
+  `[spacing]` needs no template evaluation, which makes it look statically
+  decidable, but upstream produces
+  its reformatted string by running Black over every expression and reports a
+  finding when the result differs from the source. Reproducing it byte for
+  byte therefore means reproducing Black's expression formatting, not just a
+  Jinja lexer. A timeboxed Go prototype reached 28 of upstream's 40 spacing
+  test cases and 22 of the 25 real corpus findings, the residual failures
+  falling into systematic classes rather than a long tail. Deferred on that
+  evidence; the measurement is in
+  `.claude/project/issues/jinja-spacing-spike.md`.
 - **`yaml[*]` and `var-naming` moved inside the boundary in 2026-08.** Both
   were previously excluded, `yaml` because upstream delegates it to an
   embedded yamllint and `var-naming` because it tracks ansible-core internals
