@@ -12,7 +12,7 @@ setup, near-instant feedback. The command is `astl`.
 **Same config file. Same rule ids. Same `# noqa` comments. Same output.**
 
 astl is a Go reimplementation of the [ansible-lint](https://github.com/ansible/ansible-lint)
-rules that can be decided from the YAML source alone: 39 of the 51 built-in
+rules that can be decided from the YAML source alone: 40 of the 51 built-in
 rule IDs, reproducing ansible-lint's `-f pep8` output byte for byte within that
 scope. It is **not** a drop-in replacement for ansible-lint and does not try to
 become one: keep ansible-lint where its runtime matters, for syntax check,
@@ -21,7 +21,7 @@ collection resolution, schema validation and `--fix`.
 | | astl |
 |---|---|
 | Runtime dependencies | none, one static binary |
-| ansible-lint rules supported | 39 of 51 |
+| ansible-lint rules supported | 40 of 51 |
 | Output conformance within that scope | 2387 / 2387 findings, byte for byte |
 | 478-file corpus | 59 ms, against 39.5 s |
 
@@ -99,8 +99,8 @@ astl has no Ansible runtime and never shells out. It therefore does not:
 
 | | astl | ansible-lint |
 |---|---|---|
-| The 39 statically decidable rules | yes | yes |
-| The 12 runtime-dependent rules | no | yes |
+| The 40 statically decidable rules | yes | yes |
+| The 11 runtime-dependent rules | no | yes |
 | `--fix` | no | yes |
 | Needs Python and an Ansible install | no | yes |
 | Cold start | 3.3 ms | 0.49 s |
@@ -125,7 +125,7 @@ Two numbers, and they measure different things:
 | Coverage of all ansible-lint findings on the corpus | 2387 / 2648 (90.1%) |
 
 Within its scope, astl agrees with ansible-lint on every finding: same file,
-same line, same column, same message, byte for byte. It also emits 48 findings
+same line, same column, same message, byte for byte. It also emits 55 findings
 ansible-lint does not, all on files ansible-lint abandons because its embedded
 runtime rejects them. Those extras are pinned line for line as an exact set:
 the harness fails if the set changes in either direction, so a new false
@@ -148,7 +148,7 @@ bench-compare` in the
 [compatibility repository](https://github.com/arhuman/astl-compatibility-check)
 reproduces every row:
 
-| Metric | ansible-lint | astl (39 rules) |
+| Metric | ansible-lint | astl (40 rules) |
 |---|---|---|
 | Cold start (`--version`) | 0.49 s | 3.3 ms |
 | One 6-line playbook | 2.0 s | 3.6 ms |
@@ -156,7 +156,7 @@ reproduces every row:
 | Max RSS on the corpus | 129 MiB | 42 MiB |
 
 Read the ratios with care: the comparison is asymmetric, since ansible-lint is
-also running its syntax-check subprocess and the 12 rules astl excludes. The
+also running its syntax-check subprocess and the 11 rules astl excludes. The
 honest headline numbers are cold start and the single playbook, where the gap
 is interpreter and import overhead that exists before any rule runs; even
 `ansible-lint --version` costs half a second.
@@ -174,8 +174,8 @@ the most out of it runs both, at different frequencies:
 
 | Tier | When | What runs | Why |
 |---|---|---|---|
-| Fast | every push and pull request | `astl` | seconds, and it covers the 39 rules that block most pipelines |
-| Deep | merge to the default branch, or nightly | `ansible-lint` | the 12 runtime-dependent rules astl cannot decide |
+| Fast | every push and pull request | `astl` | seconds, and it covers the 40 rules that block most pipelines |
+| Deep | merge to the default branch, or nightly | `ansible-lint` | the 11 runtime-dependent rules astl cannot decide |
 
 Adopting the fast tier costs no configuration, since `--ids upstream` is the
 default. [docs/ci.md](docs/ci.md) has the full workflows: action inputs, SARIF
@@ -212,7 +212,7 @@ what does not count as unchecked.
 
 ## Rules
 
-39 static rules are supported; the full equivalence table between astl's
+40 static rules are supported; the full equivalence table between astl's
 `domain.rule[tag]` identifiers and ansible-lint's is in
 [docs/rules.md](docs/rules.md). `internal/rules/ids.go` is the single source
 both taxonomies are derived from.

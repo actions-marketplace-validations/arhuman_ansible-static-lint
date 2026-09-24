@@ -80,7 +80,9 @@ func TestTaskRules(t *testing.T) {
     - name: Run something
       ansible.builtin.command: /bin/true creates=/tmp/x
 `,
-			want: nil,
+			// creates= silences no-changed-when and is one of the option keys
+			// that make a command free-form, so the second rule fires here.
+			want: []string{"no-free-form"},
 		},
 		{
 			name: "command-instead-of-module maps git to the git module",

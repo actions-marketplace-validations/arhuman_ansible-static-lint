@@ -8,6 +8,17 @@ All notable changes to this project are documented here. Format:
 
 ## [Unreleased]
 
+### Added - 2026-09-24
+
+- `no-free-form` (`no-free-form[raw]`, `no-free-form[raw-non-string]`): the
+  shorthand `module: key=value ...` syntax, which ansible re-parses with its
+  argument splitter and which hides quoting bugs. `command`, `shell`,
+  `win_command` and `win_shell` report only when the line carries one of the
+  module's own options (`chdir=`, `creates=`, `executable=`, `removes=`,
+  `stdin=`, `stdin_add_newline=`, `warn=`), since everything else there is
+  part of the command. astl now covers 40 of ansible-lint's 51 built-in rule
+  IDs, and the golden carries 2417 findings.
+
 ### Added - 2026-09-23
 
 - The GitHub Action runs on Windows runners. It already shipped Windows

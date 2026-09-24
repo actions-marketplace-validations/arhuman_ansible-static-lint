@@ -42,6 +42,9 @@ every subtag of that rule at once.
 | `task.literal-compare` | `literal-compare` | a `when` compares against a literal `True` or `False` |
 | `task.empty-string-compare` | `empty-string-compare` | a `when` compares against an empty string (opt-in) |
 | `task.inline-env-var` | `inline-env-var` | a `command` sets an environment variable inline |
+| `task.free-form` | `no-free-form` | every free-form action check |
+| `task.free-form[raw]` | `no-free-form[raw]` | a `raw` call embeds `executable=` instead of passing explicit args |
+| `task.free-form[raw-non-string]` | `no-free-form[raw-non-string]` | a `raw` call is given a value that is not a string |
 | `task.implicit-template` | `avoid-implicit` | `copy` is given structured `content` instead of using `template` |
 | `task.template-extension` | `jinja-template-extension` | a template `src` does not end in `.j2` (opt-in) |
 | `task.loop-var-prefix` | `loop-var-prefix` | every role loop variable check (inert until `loop_var_prefix` is set) |

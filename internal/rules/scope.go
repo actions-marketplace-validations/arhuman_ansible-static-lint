@@ -38,7 +38,6 @@ var OutOfScope = []OutOfScopeRule{
 
 	{"jinja", "evaluating Jinja templates with Ansible's filter set"},
 	{"schema", "upstream's JSON Schema bundle"},
-	{"no-free-form", "Ansible's argument splitter semantics as data"},
 	{"deprecated-module", "upstream's deprecated-module inventory as data"},
 
 	{"no-same-owner", "nothing: static, not implemented yet"},
