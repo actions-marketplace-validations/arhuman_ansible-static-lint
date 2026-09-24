@@ -132,7 +132,7 @@ jobs:
         uses: ./
         with:
           paths: examples
-          version: "0.6.0"
+          version: "0.7.0"
           output: astl-out.txt
           fail-on-findings: "false"
       - name: Assert exit code and output
