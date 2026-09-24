@@ -23,7 +23,7 @@ collection resolution, schema validation and `--fix`.
 | Runtime dependencies | none, one static binary |
 | ansible-lint rules supported | 40 of 51 |
 | Output conformance within that scope | 2417 / 2417 findings, byte for byte |
-| 478-file corpus | 59 ms, against 39.5 s |
+| 478-file corpus | 45.6 ms, against 33.5 s |
 
 ## Try it on your repository
 
@@ -140,7 +140,7 @@ astl has no Ansible runtime and never shells out. It therefore does not:
 | The 11 runtime-dependent rules | no | yes |
 | `--fix` | no | yes |
 | Needs Python and an Ansible install | no | yes |
-| Cold start | 3.3 ms | 0.49 s |
+| Cold start | 2.9 ms | 0.37 s |
 
 That is the trade-off: astl handles every check that can be decided from the
 source alone and leaves runtime-dependent validation to ansible-lint. The
@@ -187,10 +187,10 @@ reproduces every row:
 
 | Metric | ansible-lint | astl (40 rules) |
 |---|---|---|
-| Cold start (`--version`) | 0.49 s | 3.3 ms |
-| One 6-line playbook | 2.0 s | 3.6 ms |
-| 478-file corpus | 39.5 s | 59 ms |
-| Max RSS on the corpus | 129 MiB | 42 MiB |
+| Cold start (`--version`) | 0.37 s | 2.9 ms |
+| One 6-line playbook | 1.5 s | 3.3 ms |
+| 478-file corpus | 33.5 s | 45.6 ms |
+| Max RSS on the corpus | 130 MiB | 42 MiB |
 
 Read the ratios with care: the comparison is asymmetric, since ansible-lint is
 also running its syntax-check subprocess and the 11 rules astl excludes. The

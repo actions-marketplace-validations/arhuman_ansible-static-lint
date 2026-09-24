@@ -8,6 +8,18 @@ All notable changes to this project are documented here. Format:
 
 ## [Unreleased]
 
+### Changed - 2026-09-24
+
+- The published performance figures are remeasured with `make bench-compare`,
+  ten runs per row on an idle machine: the corpus reads 45.6 ms against a
+  documented 59 ms, cold start 2.9 ms against 3.3 ms, and the ansible-lint
+  side moved too (33.5 s and 0.37 s, from 39.5 s and 0.49 s). astl got faster
+  while gaining a rule, which is what the architecture note predicts: a rule
+  is a predicate over an already-parsed document.
+- The rule counts left behind by `no-free-form` are corrected in
+  `docs/performance.md` and `docs/sarif.md` (39 to 40 implemented, 12 to 11
+  unsupported, 36 to 38 working off the parsed document).
+
 ### Added - 2026-09-24
 
 - A CI job runs `pipx install` on `windows-latest` and `ubuntu-latest`. It
