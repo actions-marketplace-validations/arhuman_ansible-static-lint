@@ -60,7 +60,7 @@ func TestOutOfScopeDisjointFromIDs(t *testing.T) {
 		if r.Requires == "" {
 			t.Errorf("%q says nothing about what it requires", r.ID)
 		}
-		if r.ID != BaseRule(r.ID) {
+		if r.ID != baseRule(r.ID) {
 			t.Errorf("%q is a subtag; OutOfScope names whole rules", r.ID)
 		}
 	}
@@ -123,8 +123,8 @@ func TestBaseRule(t *testing.T) {
 		"":             "",
 	}
 	for in, want := range tests {
-		if got := BaseRule(in); got != want {
-			t.Errorf("BaseRule(%q) = %q, want %q", in, got, want)
+		if got := baseRule(in); got != want {
+			t.Errorf("baseRule(%q) = %q, want %q", in, got, want)
 		}
 	}
 }

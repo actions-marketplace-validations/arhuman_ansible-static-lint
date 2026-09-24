@@ -73,8 +73,8 @@ func MapGet(n *yaml.Node, key string) *yaml.Node {
 	return nil
 }
 
-// MapKeyNode returns the key node for key in a mapping node, or nil.
-func MapKeyNode(n *yaml.Node, key string) *yaml.Node {
+// mapKeyNode returns the key node for key in a mapping node, or nil.
+func mapKeyNode(n *yaml.Node, key string) *yaml.Node {
 	if !IsMap(n) {
 		return nil
 	}
@@ -87,7 +87,7 @@ func MapKeyNode(n *yaml.Node, key string) *yaml.Node {
 }
 
 // MapHas reports whether a mapping node contains key.
-func MapHas(n *yaml.Node, key string) bool { return MapKeyNode(n, key) != nil }
+func MapHas(n *yaml.Node, key string) bool { return mapKeyNode(n, key) != nil }
 
 // MapKeys returns the mapping keys in document order.
 func MapKeys(n *yaml.Node) []string {

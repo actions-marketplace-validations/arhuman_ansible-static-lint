@@ -190,7 +190,7 @@ func TestLoadAcceptsAValidVarNamingPattern(t *testing.T) {
 // dell/omnia, whose config is `.config/ansible-lint.yml`, that was 607 false
 // positives its `skip_list` removes.
 func TestLoadFindsEveryUpstreamFilename(t *testing.T) {
-	for _, name := range Filenames {
+	for _, name := range filenames {
 		t.Run(name, func(t *testing.T) {
 			dir := t.TempDir()
 			path := filepath.Join(dir, filepath.FromSlash(name))
@@ -230,7 +230,7 @@ func TestLoadPrefersTheFirstFilename(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(c.SkipList) != 1 || c.SkipList[0] != "first" {
-		t.Fatalf("skip_list = %v, want only the first filename in Filenames to apply", c.SkipList)
+		t.Fatalf("skip_list = %v, want only the first filename in filenames to apply", c.SkipList)
 	}
 }
 

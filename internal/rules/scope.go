@@ -76,7 +76,7 @@ func Descriptors(style IDStyle) []Descriptor {
 	}
 	out := make([]Descriptor, 0, len(equivalence))
 	for _, p := range equivalence {
-		base := BaseRule(p.upstream)
+		base := baseRule(p.upstream)
 		if !implemented[base] {
 			continue
 		}
@@ -91,9 +91,9 @@ func Descriptors(style IDStyle) []Descriptor {
 	return out
 }
 
-// BaseRule strips a subtag: `name[play]` is reported by the `name` rule. A tag
+// baseRule strips a subtag: `name[play]` is reported by the `name` rule. A tag
 // carrying no subtag is its own base.
-func BaseRule(tag string) string {
+func baseRule(tag string) string {
 	if i := strings.IndexByte(tag, '['); i >= 0 {
 		return tag[:i]
 	}
