@@ -37,6 +37,13 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Pushing the Homebrew cask writes to arhuman/homebrew-tap, which
+          # GITHUB_TOKEN cannot reach: it is scoped to this repository. A
+          # fine-grained PAT limited to that tap with contents:write fills the
+          # gap. Absent, goreleaser fails after the GitHub release is already
+          # published; re-running the workflow once the secret exists is safe,
+          # since the release itself is idempotent.
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
 
   # Separate job, not a step in goreleaser: a PyPI version is permanent and
   # cannot be re-uploaded, so a failed upload must be re-runnable without

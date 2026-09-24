@@ -42,6 +42,15 @@ Linux, macOS and Windows, amd64 and arm64, are on the
 release ships checksums signed with cosign; see
 [docs/supply-chain.md](docs/supply-chain.md) to verify one.
 
+**With Homebrew**, on macOS or Linux:
+
+```sh
+brew install --cask arhuman/tap/ansible-static-lint
+```
+
+The cask is generated from the release archives on every tag, so it cannot
+lag behind a release.
+
 **From PyPI**, if you already manage ansible-lint with pip or pipx:
 
 ```sh

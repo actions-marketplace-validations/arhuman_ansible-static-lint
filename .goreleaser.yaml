@@ -65,6 +65,55 @@ signs:
       - --yes
     artifacts: checksum
 
+# The Homebrew cask in arhuman/homebrew-tap, generated from the archives built
+# above rather than written by hand. Before this, the tap carried a formula
+# with four URLs and four checksums bumped manually, and it went stale at
+# v0.6.0 without anything noticing: nothing in the release script or its
+# checklist mentioned it.
+#
+# `homebrew_casks`, not `brews`: goreleaser hard-deprecated `brews` in v2.16
+# (this repo's workflows pin `~> v2`, which resolves past that), and
+# `goreleaser check` fails on it. Casks live in Casks/, so the tap's old
+# Formula/ansible-static-lint.rb is deleted and tap_migrations.json maps the
+# name, which is what keeps an existing `brew upgrade` working.
+#
+# GITHUB_TOKEN cannot be used here. It is scoped to the repository running the
+# workflow, so pushing to the tap needs a token that can write to it: a
+# fine-grained PAT limited to arhuman/homebrew-tap with contents:write, stored
+# as the HOMEBREW_TAP_TOKEN secret.
+#
+# Windows is absent on purpose: Homebrew has no cask for it, and `ids` keeps
+# the cask to the archives it can install.
+homebrew_casks:
+  - name: ansible-static-lint
+    binaries:
+      - astl
+    ids:
+      - default
+    repository:
+      owner: arhuman
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: https://github.com/arhuman/ansible-static-lint
+    description: Fast static linter for Ansible playbooks and roles, no Python required
+    license: MIT
+    commit_author:
+      name: goreleaser
+      email: noreply@github.com
+    commit_msg_template: "chore: bump {{ .ProjectName }} to {{ .Tag }}"
+    # The archives are cosign-signed but not Apple-notarized, which is what
+    # Gatekeeper checks, so a downloaded binary is quarantined and refuses to
+    # run. Clearing the attribute is goreleaser's documented answer for an
+    # unsigned cask; it does weaken a macOS protection, and notarization is
+    # the real fix if this ever ships to a wider audience.
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/astl"]
+          end
+
 changelog:
   use: github
   sort: asc

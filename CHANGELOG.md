@@ -8,6 +8,15 @@ All notable changes to this project are documented here. Format:
 
 ## [Unreleased]
 
+### Added - 2026-09-24
+
+- `brew install --cask arhuman/tap/ansible-static-lint`. The cask is generated
+  by GoReleaser from the release archives and pushed on every tag, so it
+  cannot lag a release. The tap previously carried a hand-written formula
+  whose four URLs and checksums were bumped by hand; it had gone stale at
+  v0.6.0 with nothing to notice. Existing formula installs migrate on the
+  next `brew update` via the tap's `tap_migrations.json`.
+
 ### Changed - 2026-09-24
 
 - The published performance figures are remeasured with `make bench-compare`,

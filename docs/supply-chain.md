@@ -28,6 +28,23 @@ The GitHub Action downloads a release binary and checks it against these
 published checksums, so a workflow using the action inherits the same guarantee
 without running cosign itself.
 
+## Homebrew cask
+
+`brew install --cask arhuman/tap/ansible-static-lint` downloads the same
+release archive as a manual download, and Homebrew checks it against the
+SHA-256 the cask records. That checksum is written by goreleaser from the
+archive it built, so the cask cannot drift from the release it names.
+
+What this does not do is verify the cosign signature: Homebrew checks the
+digest, not the provenance. To verify provenance, follow the archive checks
+above on the release the cask points at.
+
+The cask also clears the macOS quarantine attribute on install. astl's
+archives are cosign-signed but not Apple-notarized, and Gatekeeper checks
+notarization, so without that step a downloaded binary refuses to run. It
+weakens a macOS protection deliberately; notarization is the real fix and is
+not in place today.
+
 ## PyPI wheels
 
 The wheels on PyPI are packed from these same archives, not rebuilt. The
