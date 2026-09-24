@@ -93,13 +93,26 @@ func IsYAMLKind(kind string) bool {
 	return !nonYAMLKinds[kind]
 }
 
+// compiledKindTable is kindTable with every pattern's brace expansion and
+// segment split done once. The patterns are compile-time constants, so this is
+// pure per-call work removed from the discovery hot path: KindOf runs on every
+// discovered file, and rebuilding these made up a measurable share of it.
+// kindTable stays the readable source of truth and its order is preserved.
+var compiledKindTable = func() []compiledGlob {
+	out := make([]compiledGlob, len(kindTable))
+	for i, r := range kindTable {
+		out[i] = compileGlob(r.pattern)
+	}
+	return out
+}()
+
 // KindOf returns the kind for a slash-separated path, or "" when the path
 // matches no known kind. Patterns are `**/`-anchored, so absolute and
 // relative paths both work.
 func KindOf(relPath string) string {
-	for _, r := range kindTable {
-		if matchGlob(r.pattern, relPath) {
-			return r.kind
+	for i, g := range compiledKindTable {
+		if g.match(relPath) {
+			return kindTable[i].kind
 		}
 	}
 	return ""
