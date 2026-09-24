@@ -139,8 +139,6 @@ runs:
         ASTL_OUTPUT: ${{ inputs.output }}
         ASTL_FAIL: ${{ inputs.fail-on-findings }}
       run: |
-        # No `set -e`: the exit code is the payload here, not a failure to abort
-        # on. It is captured, published as an output, and only then acted on.
         set -uo pipefail
 
         args=(-f "$ASTL_FORMAT" --ids "$ASTL_IDS")
@@ -148,12 +146,17 @@ runs:
         # Word splitting is the documented contract: paths is space separated.
         read -r -a paths <<< "$ASTL_PATHS"
 
+        # astl's exit code is the payload here, not a failure to abort on, so
+        # each call captures it with `|| code=$?`. A bare call would not do:
+        # the runner invokes this script as `bash -e`, and `set` above cannot
+        # unset a flag that came from the invocation, so exit 2 would kill the
+        # step before the code was ever read.
         if [ -n "$ASTL_OUTPUT" ]; then
-          astl "${args[@]}" "${paths[@]}" > "$ASTL_OUTPUT"
+          astl "${args[@]}" "${paths[@]}" > "$ASTL_OUTPUT" || code=$?
         else
-          astl "${args[@]}" "${paths[@]}"
+          astl "${args[@]}" "${paths[@]}" || code=$?
         fi
-        code=$?
+        code=${code:-0}
         echo "exit-code=$code" >> "$GITHUB_OUTPUT"
 
         # astl failing to run is not a finding, and no input suppresses it.

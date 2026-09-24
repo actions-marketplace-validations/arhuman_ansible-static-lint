@@ -8,6 +8,14 @@ All notable changes to this project are documented here. Format:
 
 ## [Unreleased]
 
+### Fixed - 2026-09-24
+
+- The action publishes its `exit-code` output again, and `fail-on-findings:
+  "false"` is honoured. The runner invokes a composite step as `bash -e`, which
+  the step's own `set` cannot undo, so astl exiting 2 killed the step before
+  the code was read: the output was never written and every consumer gating on
+  it saw a failed step instead.
+
 ## [0.7.0] - 2026-09-24
 
 ### Added - 2026-09-24
