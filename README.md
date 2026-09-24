@@ -45,11 +45,14 @@ release ships checksums signed with cosign; see
 **With Homebrew**, on macOS or Linux:
 
 ```sh
-brew install --cask arhuman/tap/ansible-static-lint
+brew tap arhuman/tap
+brew install ansible-static-lint
 ```
 
-The cask is generated from the release archives on every tag, so it cannot
-lag behind a release.
+From v0.7.0 the tap ships a cask, generated from the release archives on every
+tag so it cannot lag behind a release. Earlier versions ship a formula; `brew
+install` resolves whichever the tap currently holds, and an existing formula
+install migrates to the cask on the next `brew update`.
 
 **From PyPI**, if you already manage ansible-lint with pip or pipx:
 
