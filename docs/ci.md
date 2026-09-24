@@ -43,7 +43,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: arhuman/ansible-static-lint@v0.6.0
+      - uses: arhuman/ansible-static-lint@v0.7.0
 ```
 
 Without the action, install the binary yourself:
@@ -103,7 +103,7 @@ reach code scanning and the job still goes red. Drop either that input or the
 ```yaml
 repos:
   - repo: https://github.com/arhuman/ansible-static-lint
-    rev: v0.6.0
+    rev: v0.7.0
     hooks:
       - id: astl
 ```

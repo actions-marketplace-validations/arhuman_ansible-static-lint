@@ -8,6 +8,8 @@ All notable changes to this project are documented here. Format:
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-24
+
 ### Added - 2026-09-24
 
 - `brew install --cask arhuman/tap/ansible-static-lint`. The cask is generated
