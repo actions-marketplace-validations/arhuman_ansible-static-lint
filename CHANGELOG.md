@@ -10,6 +10,13 @@ All notable changes to this project are documented here. Format:
 
 ### Added - 2026-09-24
 
+- A CI job runs `pipx install` on `windows-latest` and `ubuntu-latest`. It
+  packs a wheel from the working tree with goreleaser's snapshot mode, installs
+  it with pipx, and asserts the exit code and exact output over the `examples`
+  fixture. The README advertises that install path and nothing ran it: the
+  `action` job covers the download-a-release route, which is a different
+  artifact built by a different script.
+
 - The README states the Windows case plainly: ansible-lint ships MacOS and
   POSIX classifiers and needs ansible-core, so linting playbooks on Windows
   normally means WSL, a container or a Linux runner. astl needs none of them.

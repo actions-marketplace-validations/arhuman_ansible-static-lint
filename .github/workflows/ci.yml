@@ -150,6 +150,102 @@ jobs:
           # checked-out fixture LF so only real differences show up here.
           diff -u examples/expected.txt astl-out.txt
 
+  wheel:
+    name: pipx install (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+          check-latest: true
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      # The README tells Windows users to `pipx install ansible-static-lint`,
+      # and until this job existed nothing ran that path. The `action` job
+      # covers the download-a-release route; this one covers the wheel, which
+      # is a different artifact built by a different script.
+      #
+      # It packs from the working tree rather than a published release, so a
+      # change that breaks the wheel fails the pull request that made it
+      # instead of the release that ships it. goreleaser's snapshot mode gives
+      # build_wheels.py the archive layout it expects; signing and SBOMs are
+      # skipped because nothing here is published.
+      - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
+        with:
+          version: "~> v2"
+          args: release --snapshot --clean --skip=sign,sbom,publish,announce
+      - name: Pack the wheels
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The snapshot version carries a -SNAPSHOT-<sha> suffix that is not
+          # PEP 440; --archive-version names the archives, --version names the
+          # wheel, which is exactly the split the release rehearsal uses. The
+          # wheel version is a placeholder because nothing here is published:
+          # what is under test is that the wheel installs and runs, not what it
+          # is called. These wheels also carry no SBOM, since sbom is skipped
+          # above; release.yml is the path that ships one.
+          shopt -s nullglob
+          zips=(dist/*_windows_amd64.zip)
+          if [ ${#zips[@]} -ne 1 ]; then
+            echo "::error::expected one windows_amd64 archive, found ${#zips[@]}" >&2
+            exit 1
+          fi
+          archive_version=$(basename "${zips[0]}" \
+            | sed -E 's#^ansible-static-lint_(.+)_windows_amd64\.zip$#\1#')
+          echo "packing wheels from archive version $archive_version"
+          python scripts/build_wheels.py \
+            --version 0.0.0 \
+            --archive-version "$archive_version" \
+            --archives dist --out dist/wheels
+
+      - name: Install it the way the README says
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet pipx
+          shopt -s nullglob
+          case "${{ runner.os }}-${{ runner.arch }}" in
+            Windows-X64) wheels=(dist/wheels/*win_amd64.whl) ;;
+            Linux-X64)   wheels=(dist/wheels/*manylinux*x86_64.whl) ;;
+            *) echo "::error::no wheel mapped for ${{ runner.os }}-${{ runner.arch }}" >&2; exit 1 ;;
+          esac
+          if [ ${#wheels[@]} -ne 1 ]; then
+            echo "::error::expected one matching wheel, found ${#wheels[@]}" >&2
+            exit 1
+          fi
+          wheel=${wheels[0]}
+          echo "pipx install $wheel"
+          python -m pipx install "$wheel"
+          python -m pipx ensurepath
+          printf '%s\n' "$(python -m pipx environment --value PIPX_BIN_DIR)" >> "$GITHUB_PATH"
+
+      # Same assertion as the action job: an install that runs proves less than
+      # one that produces the right findings.
+      - name: Assert exit code and output
+        shell: bash
+        run: |
+          set -euo pipefail
+          astl --version
+          code=0
+          astl examples > astl-out.txt || code=$?
+          if [ "$code" != "2" ]; then
+            echo "::error::expected exit code 2 (violations found), got $code" >&2
+            cat astl-out.txt >&2
+            exit 1
+          fi
+          # astl normalizes emitted paths with filepath.ToSlash and
+          # .gitattributes keeps the fixture LF, so this compares byte for byte
+          # on Windows too.
+          diff -u examples/expected.txt astl-out.txt
+
   commitlint:
     name: commit messages
     runs-on: ubuntu-latest
