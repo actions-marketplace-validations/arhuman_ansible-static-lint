@@ -13,9 +13,11 @@ var IDs = []string{
 	"avoid-implicit", "command-instead-of-module", "command-instead-of-shell",
 	"complexity", "deprecated-bare-vars", "deprecated-local-action",
 	"empty-string-compare", "galaxy", "galaxy-version-incorrect", "ignore-errors",
-	"inline-env-var", "jinja-template-extension", "key-order", "literal-compare",
+	"inline-env-var", "jinja-template-extension", "key-order", "latest",
+	"literal-compare",
 	"loop-var-prefix", "meta-incorrect", "meta-no-tags", "meta-runtime",
-	"meta-video-links", "name", "no-changed-when", "no-handler", "no-jinja-when",
+	"meta-video-links", "name", "no-changed-when", "no-free-form", "no-handler",
+	"no-jinja-when",
 	"no-log-password", "no-prompting", "no-relative-paths", "no-tabs",
 	"package-latest", "partial-become", "playbook-extension",
 	"risky-file-permissions", "risky-octal", "risky-shell-pipe", "role-name",
@@ -123,11 +125,20 @@ func applySkips(f *parse.File, findings []Finding) []Finding {
 func taskSkipRanges(f *parse.File) map[int]map[string]bool {
 	out := map[int]map[string]bool{}
 	for _, t := range f.Tasks() {
-		set := canonicalSkips(f.SkipsInRange(t.Pos.Line, parse.EndLine(t.Node)))
+		end := parse.EndLine(t.Node)
+		// A block's range spans its children, which are tasks in their own
+		// right and appear separately in this loop. Collecting over the whole
+		// span would let one child's noqa suppress its siblings, where upstream
+		// attaches skips to each flattened task on its own.
+		collectTo := end
+		if t.IsBlock {
+			collectTo = parse.BlockHeaderEnd(t.Node)
+		}
+		set := canonicalSkips(f.SkipsInRange(t.Pos.Line, collectTo))
 		if hasSkipAnsibleLint(t) {
 			set["*"] = true
 		}
-		addSkipRange(out, set, t.Pos.Line, parse.EndLine(t.Node))
+		addSkipRange(out, set, t.Pos.Line, end)
 	}
 	for _, play := range f.Plays() {
 		line := parse.NodePos(play).Line

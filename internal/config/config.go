@@ -45,14 +45,14 @@ type Config struct {
 	IgnoreFile string `yaml:"ignore_file"`
 }
 
-// Filenames are the config files ansible-lint looks for, in its own order
+// filenames are the config files ansible-lint looks for, in its own order
 // (`CONFIG_FILENAMES` in upstream's constants.py). The first one that exists
 // wins, and the rest are not merged into it.
 //
 // Reading only `.ansible-lint` was worth 607 false positives on dell/omnia,
 // which keeps its policy at `.config/ansible-lint.yml`: none of its skip_list,
 // profile or exclude_paths applied.
-var Filenames = []string{
+var filenames = []string{
 	".ansible-lint",
 	".ansible-lint.yml",
 	".ansible-lint.yaml",
@@ -60,11 +60,11 @@ var Filenames = []string{
 	".config/ansible-lint.yaml",
 }
 
-// Load reads the first of Filenames that exists under dir. No config file at
+// Load reads the first of filenames that exists under dir. No config file at
 // all yields an empty config, which is not an error: a repository is free not
 // to configure the linter.
 func Load(dir string) (Config, error) {
-	for _, name := range Filenames {
+	for _, name := range filenames {
 		c, err := LoadFile(filepath.Join(dir, filepath.FromSlash(name)))
 		if errors.Is(err, fs.ErrNotExist) {
 			continue

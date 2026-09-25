@@ -5,8 +5,8 @@ the most out of it runs both, at different frequencies:
 
 | Tier | When | What runs | Why |
 |---|---|---|---|
-| Fast | every push and pull request | `astl` | seconds, and it covers the 38 rules that block most pipelines |
-| Deep | merge to the default branch, or nightly | `ansible-lint` | the 13 runtime-dependent rules astl cannot decide ([scope.md](scope.md)) |
+| Fast | every push and pull request | `astl` | seconds, and it covers the 40 rules that block most pipelines |
+| Deep | merge to the default branch, or nightly | `ansible-lint` | the 11 runtime-dependent rules astl cannot decide ([scope.md](scope.md)) |
 
 Adopting the fast tier costs no configuration. The default `--ids upstream`
 keeps ansible-lint's rule identifiers, so an existing `.ansible-lint`
@@ -32,6 +32,19 @@ checksums, so the job needs neither Go nor Python. Its inputs are `paths`,
 `fail-on-findings`; it outputs `exit-code`. See [action.yml](../action.yml).
 Pin it to a commit SHA if your policy requires it, as this repository does for
 its own workflows.
+
+It runs on `ubuntu-latest`, `macos-latest` and `windows-latest`, amd64 and
+arm64. Windows needs no Python, no WSL and no container, which is the case a
+collection targeting Windows hosts usually has to work around:
+
+```yaml
+jobs:
+  ansible:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: arhuman/ansible-static-lint@v0.7.0
+```
 
 Without the action, install the binary yourself:
 
@@ -90,7 +103,7 @@ reach code scanning and the job still goes red. Drop either that input or the
 ```yaml
 repos:
   - repo: https://github.com/arhuman/ansible-static-lint
-    rev: v0.5.1
+    rev: v0.7.0
     hooks:
       - id: astl
 ```

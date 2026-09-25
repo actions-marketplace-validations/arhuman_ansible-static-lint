@@ -38,10 +38,8 @@ var OutOfScope = []OutOfScopeRule{
 
 	{"jinja", "evaluating Jinja templates with Ansible's filter set"},
 	{"schema", "upstream's JSON Schema bundle"},
-	{"no-free-form", "Ansible's argument splitter semantics as data"},
 	{"deprecated-module", "upstream's deprecated-module inventory as data"},
 
-	{"latest", "nothing: static, not implemented yet"},
 	{"no-same-owner", "nothing: static, not implemented yet"},
 	{"role-argument-spec", "nothing: static, not implemented yet"},
 }
@@ -78,7 +76,7 @@ func Descriptors(style IDStyle) []Descriptor {
 	}
 	out := make([]Descriptor, 0, len(equivalence))
 	for _, p := range equivalence {
-		base := BaseRule(p.upstream)
+		base := baseRule(p.upstream)
 		if !implemented[base] {
 			continue
 		}
@@ -93,9 +91,9 @@ func Descriptors(style IDStyle) []Descriptor {
 	return out
 }
 
-// BaseRule strips a subtag: `name[play]` is reported by the `name` rule. A tag
+// baseRule strips a subtag: `name[play]` is reported by the `name` rule. A tag
 // carrying no subtag is its own base.
-func BaseRule(tag string) string {
+func baseRule(tag string) string {
 	if i := strings.IndexByte(tag, '['); i >= 0 {
 		return tag[:i]
 	}

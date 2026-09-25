@@ -192,8 +192,8 @@ func TestUnquote(t *testing.T) {
 }
 
 func TestMapHelpersAreNilSafe(t *testing.T) {
-	if got := MapKeyNode(nil, "k"); got != nil {
-		t.Errorf("MapKeyNode(nil) = %v, want nil", got)
+	if got := mapKeyNode(nil, "k"); got != nil {
+		t.Errorf("mapKeyNode(nil) = %v, want nil", got)
 	}
 	if got := MapKeys(nil); got != nil {
 		t.Errorf("MapKeys(nil) = %v, want nil", got)
@@ -203,7 +203,7 @@ func TestMapHelpersAreNilSafe(t *testing.T) {
 	if got := MapKeys(seq); got != nil {
 		t.Errorf("MapKeys(sequence) = %v, want nil", got)
 	}
-	if got := MapKeyNode(seq, "one"); got != nil {
-		t.Errorf("MapKeyNode(sequence) = %v, want nil", got)
+	if got := mapKeyNode(seq, "one"); got != nil {
+		t.Errorf("mapKeyNode(sequence) = %v, want nil", got)
 	}
 }

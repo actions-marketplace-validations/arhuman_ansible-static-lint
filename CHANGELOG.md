@@ -8,6 +8,124 @@ All notable changes to this project are documented here. Format:
 
 ## [Unreleased]
 
+### Fixed - 2026-09-24
+
+- The action publishes its `exit-code` output again, and `fail-on-findings:
+  "false"` is honoured. The runner invokes a composite step as `bash -e`, which
+  the step's own `set` cannot undo, so astl exiting 2 killed the step before
+  the code was read: the output was never written and every consumer gating on
+  it saw a failed step instead.
+
+## [0.7.0] - 2026-09-24
+
+### Added - 2026-09-24
+
+- `brew install --cask arhuman/tap/ansible-static-lint`. The cask is generated
+  by GoReleaser from the release archives and pushed on every tag, so it
+  cannot lag a release. The tap previously carried a hand-written formula
+  whose four URLs and checksums were bumped by hand; it had gone stale at
+  v0.6.0 with nothing to notice. Existing formula installs migrate on the
+  next `brew update` via the tap's `tap_migrations.json`.
+
+### Changed - 2026-09-24
+
+- The published performance figures are remeasured with `make bench-compare`,
+  ten runs per row on an idle machine: the corpus reads 45.6 ms against a
+  documented 59 ms, cold start 2.9 ms against 3.3 ms, and the ansible-lint
+  side moved too (33.5 s and 0.37 s, from 39.5 s and 0.49 s). astl got faster
+  while gaining a rule, which is what the architecture note predicts: a rule
+  is a predicate over an already-parsed document.
+- The rule counts left behind by `no-free-form` are corrected in
+  `docs/performance.md` and `docs/sarif.md` (39 to 40 implemented, 12 to 11
+  unsupported, 36 to 38 working off the parsed document).
+
+### Added - 2026-09-24
+
+- A CI job runs `pipx install` on `windows-latest` and `ubuntu-latest`. It
+  packs a wheel from the working tree with goreleaser's snapshot mode, installs
+  it with pipx, and asserts the exit code and exact output over the `examples`
+  fixture. The README advertises that install path and nothing ran it: the
+  `action` job covers the download-a-release route, which is a different
+  artifact built by a different script.
+
+- The README states the Windows case plainly: ansible-lint ships MacOS and
+  POSIX classifiers and needs ansible-core, so linting playbooks on Windows
+  normally means WSL, a container or a Linux runner. astl needs none of them.
+  The section carries a PowerShell download, the `pipx` path and the Actions
+  snippet, and says what is not required. The binaries and wheels already
+  shipped; the claim did not.
+
+- `no-free-form` (`no-free-form[raw]`, `no-free-form[raw-non-string]`): the
+  shorthand `module: key=value ...` syntax, which ansible re-parses with its
+  argument splitter and which hides quoting bugs. `command`, `shell`,
+  `win_command` and `win_shell` report only when the line carries one of the
+  module's own options (`chdir=`, `creates=`, `executable=`, `removes=`,
+  `stdin=`, `stdin_add_newline=`, `warn=`), since everything else there is
+  part of the command. astl now covers 40 of ansible-lint's 51 built-in rule
+  IDs, and the golden carries 2417 findings.
+
+### Added - 2026-09-23
+
+- The GitHub Action runs on Windows runners. It already shipped Windows
+  binaries; the action rejected any runner that was not Linux or macOS, so
+  `runs-on: windows-latest` needed a manual download. It now selects the `.zip`
+  archive and `astl.exe`, and resolves the native path Windows needs on `PATH`.
+- A CI job runs the action on `ubuntu-latest`, `macos-latest` and
+  `windows-latest` against the `examples` fixture, asserting both the exit code
+  and the exact output. Nothing tested the action before.
+
+### Changed - 2026-09-23
+
+- `docs/scope.md` lists all 12 unsupported rule IDs, including the four that
+  report nothing on this corpus (`deprecated-module`, `no-same-owner`,
+  `only-builtins`, `role-argument-spec`), so the twelve can be found in one
+  place rather than inferred from a subtraction.
+- "51 default rules" reads "51 built-in rule IDs" in the README and
+  `docs/scope.md`, since three of the twelve are opt-in and never run by
+  default.
+
+### Fixed - 2026-09-23
+
+- Documented performance figures now match what the current binary measures.
+  The corpus row read 37 ms against a measured 59 ms, stale since the `latest`
+  rule and the gitignore-semantics discovery landed; the speed guard never
+  caught it because 59 ms is still inside its 150 ms budget. Cold start, the
+  single-playbook row and both RSS figures were remeasured at the same time.
+- The extra-findings count read 46 in the README and `docs/scope.md` where the
+  pinned set in the compatibility harness holds 48.
+- The README's Rules section said 38 static rules where the rest of the
+  documentation says 39.
+
+## [0.6.0] - 2026-09-21
+
+### Added - 2026-09-21
+
+- `latest` (`latest[git]`, `latest[hg]`): a version control checkout left on
+  its moving default. A missing `version`/`revision` counts, as upstream reads
+  the argument with the unpinned value as its default. astl now covers 39 of
+  ansible-lint's 51 default rules, and the golden carries 2387 findings.
+
+- PyPI distribution: `pipx install ansible-static-lint`. Wheels ship the
+  released binary in `.data/scripts/`, so nothing is rebuilt and no Python
+  interpreter starts at run time. Eight wheels cover linux, macOS and Windows
+  on amd64 and arm64, with the static linux binary serving both manylinux and
+  musllinux.
+- `scripts/build_wheels.py` packs the wheels from the GoReleaser archives.
+  Stdlib only, and byte-reproducible.
+- Wheels carry the archive's SBOM at `dist-info/sboms/astl.spdx.json` and are
+  uploaded via PyPI trusted publishing with PEP 740 attestations. The release
+  job verifies the cosign-signed `checksums.txt` before packing, so a wheel's
+  binary is the one that was signed.
+- A manual `TestPyPI rehearsal` workflow repacks an existing release and
+  publishes it to TestPyPI, so the first real upload is not the first attempt.
+
+### Fixed - 2026-09-21
+
+- A `# noqa` on one task inside a `block`/`rescue`/`always` no longer silences
+  its siblings. The block container collected suppressions across its whole
+  span, where ansible-lint attaches them to each task on its own. No shipped
+  rule could reach the case, which is why no finding changed until now.
+
 ## [0.5.1] - 2026-09-12
 
 ### Fixed - 2026-09-12 (issue #5)

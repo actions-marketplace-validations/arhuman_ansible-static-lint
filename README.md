@@ -12,8 +12,8 @@ setup, near-instant feedback. The command is `astl`.
 **Same config file. Same rule ids. Same `# noqa` comments. Same output.**
 
 astl is a Go reimplementation of the [ansible-lint](https://github.com/ansible/ansible-lint)
-rules that can be decided from the YAML source alone: 38 of the 51 default
-rules, reproducing ansible-lint's `-f pep8` output byte for byte within that
+rules that can be decided from the YAML source alone: 40 of the 51 built-in
+rule IDs, reproducing ansible-lint's `-f pep8` output byte for byte within that
 scope. It is **not** a drop-in replacement for ansible-lint and does not try to
 become one: keep ansible-lint where its runtime matters, for syntax check,
 collection resolution, schema validation and `--fix`.
@@ -21,16 +21,16 @@ collection resolution, schema validation and `--fix`.
 | | astl |
 |---|---|
 | Runtime dependencies | none, one static binary |
-| ansible-lint rules supported | 38 of 51 |
-| Output conformance within that scope | 2370 / 2370 findings, byte for byte |
-| 478-file corpus | 37 ms, against 46.8 s |
+| ansible-lint rules supported | 40 of 51 |
+| Output conformance within that scope | 2417 / 2417 findings, byte for byte |
+| 478-file corpus | 45.6 ms, against 33.5 s |
 
 ## Try it on your repository
 
 **Download the binary.** No Go, no Python, no Ansible:
 
 ```sh
-VERSION=0.5.1
+VERSION=0.7.0
 OS=$(uname -s | tr 'A-Z' 'a-z')
 ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
 curl -sSfL "https://github.com/arhuman/ansible-static-lint/releases/download/v${VERSION}/ansible-static-lint_${VERSION}_${OS}_${ARCH}.tar.gz" | tar -xz astl
@@ -42,12 +42,36 @@ Linux, macOS and Windows, amd64 and arm64, are on the
 release ships checksums signed with cosign; see
 [docs/supply-chain.md](docs/supply-chain.md) to verify one.
 
+**With Homebrew**, on macOS or Linux:
+
+```sh
+brew tap arhuman/tap
+brew install ansible-static-lint
+```
+
+From v0.7.0 the tap ships a cask, generated from the release archives on every
+tag so it cannot lag behind a release. Earlier versions ship a formula; `brew
+install` resolves whichever the tap currently holds, and an existing formula
+install migrates to the cask on the next `brew update`.
+
+**From PyPI**, if you already manage ansible-lint with pip or pipx:
+
+```sh
+pipx install ansible-static-lint
+astl path/to/playbooks
+```
+
+The wheel carries the same binary as the release archive above, so there is
+still no Python at runtime: no interpreter starts when you run `astl`. Python
+is only the delivery mechanism. `pip install ansible-static-lint` works too, in
+a virtualenv.
+
 **In GitHub Actions.** Two lines, and the action fetches and checksum-verifies
 the binary for you:
 
 ```yaml
       - uses: actions/checkout@v7
-      - uses: arhuman/ansible-static-lint@v0.5.1
+      - uses: arhuman/ansible-static-lint@v0.7.0
 ```
 
 **As a pre-commit hook.** pre-commit installs astl in an isolated environment
@@ -59,7 +83,7 @@ cached binary.
 ```yaml
 repos:
   - repo: https://github.com/arhuman/ansible-static-lint
-    rev: v0.5.1
+    rev: v0.7.0
     hooks:
       - id: astl
 ```
@@ -74,6 +98,43 @@ ansible-lint config file, astl reads it as is: `profile`, `skip_list`,
 existing `# noqa` comments. More in
 [docs/configuration.md](docs/configuration.md).
 
+### Ansible linting on Windows, without WSL or Ansible
+
+ansible-lint does not target Windows: it ships `Operating System :: MacOS`
+and `:: POSIX` classifiers and depends on ansible-core, whose control node is
+POSIX-only. The usual answer is WSL, a container, or a Linux CI runner. astl
+needs no runtime at all, so a native Windows binary lints the same playbooks
+from PowerShell directly.
+
+```powershell
+$TAG = "v0.7.0"
+$VERSION = $TAG.TrimStart("v")
+Invoke-WebRequest "https://github.com/arhuman/ansible-static-lint/releases/download/$TAG/ansible-static-lint_${VERSION}_windows_amd64.zip" -OutFile astl.zip
+Expand-Archive astl.zip -DestinationPath .
+.\astl.exe path\to\playbooks
+```
+
+`pipx install ansible-static-lint` works the same way it does elsewhere, and
+still starts no interpreter at run time. Windows wheels ship for amd64 and
+arm64.
+
+In GitHub Actions the action runs on Windows runners too:
+
+```yaml
+runs-on: windows-latest
+steps:
+  - uses: actions/checkout@v7
+  - uses: arhuman/ansible-static-lint@v0.7.0
+```
+
+What you do **not** need: WSL, a Linux container, a Python interpreter,
+ansible-core, or a Visual C++ redistributable. The binary is statically linked
+and `astl.exe` is the whole install.
+
+The rules are the same 40 on every platform. Paths in the output use the
+separator the platform reports, and a repository's `.ansible-lint` config is
+read identically.
+
 ## Why static?
 
 astl has no Ansible runtime and never shells out. It therefore does not:
@@ -87,15 +148,15 @@ astl has no Ansible runtime and never shells out. It therefore does not:
 
 | | astl | ansible-lint |
 |---|---|---|
-| The 38 statically decidable rules | yes | yes |
-| The 13 runtime-dependent rules | no | yes |
+| The 40 statically decidable rules | yes | yes |
+| The 11 runtime-dependent rules | no | yes |
 | `--fix` | no | yes |
 | Needs Python and an Ansible install | no | yes |
-| Cold start | 2.2 ms | 0.52 s |
+| Cold start | 2.9 ms | 0.37 s |
 
 That is the trade-off: astl handles every check that can be decided from the
 source alone and leaves runtime-dependent validation to ansible-lint. The
-boundary is measured, not rhetorical: 90% of the corpus findings astl does
+boundary is measured, not rhetorical: 99% of the corpus findings astl does
 not report require capabilities it deliberately does not have, and the full
 per-rule accounting is in [docs/scope.md](docs/scope.md).
 
@@ -109,11 +170,11 @@ Two numbers, and they measure different things:
 
 | Metric | Value |
 |---|---|
-| Conformance within the supported scope | **2370 / 2370** golden findings reproduced (100%) |
-| Coverage of all ansible-lint findings on the corpus | 2370 / 2648 (89.5%) |
+| Conformance within the supported scope | **2417 / 2417** golden findings reproduced (100%) |
+| Coverage of all ansible-lint findings on the corpus | 2417 / 2648 (91.3%) |
 
 Within its scope, astl agrees with ansible-lint on every finding: same file,
-same line, same column, same message, byte for byte. It also emits 46 findings
+same line, same column, same message, byte for byte. It also emits 55 findings
 ansible-lint does not, all on files ansible-lint abandons because its embedded
 runtime rejects them. Those extras are pinned line for line as an exact set:
 the harness fails if the set changes in either direction, so a new false
@@ -131,24 +192,28 @@ compatibility; see ADR 0004 for the reasoning and its limits.
 ## How fast?
 
 Measured on Apple Silicon macOS against ansible-lint 26.8.0
-(Python 3.14, `--offline`), on ansible-lint's own examples corpus:
+(Python 3.14, `--offline`), on ansible-lint's own examples corpus. `make
+bench-compare` in the
+[compatibility repository](https://github.com/arhuman/astl-compatibility-check)
+reproduces every row:
 
-| Metric | ansible-lint | astl (38 rules) |
+| Metric | ansible-lint | astl (40 rules) |
 |---|---|---|
-| Cold start (`--version`) | 0.52 s | 2.2 ms |
-| One 6-line playbook | 2.1 s | 2.5 ms |
-| 478-file corpus | 46.8 s | 37 ms |
-| Max RSS on the corpus | 123 MiB | 42 MiB |
+| Cold start (`--version`) | 0.37 s | 2.9 ms |
+| One 6-line playbook | 1.5 s | 3.3 ms |
+| 478-file corpus | 33.5 s | 45.6 ms |
+| Max RSS on the corpus | 130 MiB | 42 MiB |
 
 Read the ratios with care: the comparison is asymmetric, since ansible-lint is
-also running its syntax-check subprocess and the 13 rules astl excludes. The
+also running its syntax-check subprocess and the 11 rules astl excludes. The
 honest headline numbers are cold start and the single playbook, where the gap
 is interpreter and import overhead that exists before any rule runs; even
 `ansible-lint --version` costs half a second.
 
-`make bench` fails the build if linting the reference corpus exceeds 150 ms,
-roughly five times the current time, so the property is guarded rather than
-assumed. Why the numbers look like this is in
+`make bench` fails the build if linting the reference corpus exceeds 150 ms, so
+the property is guarded rather than assumed. That guard is one-sided by design:
+it times astl alone. The two-linter comparison above is `make bench-compare`.
+Why the numbers look like this is in
 [docs/performance.md](docs/performance.md).
 
 ## Using astl in CI
@@ -158,8 +223,8 @@ the most out of it runs both, at different frequencies:
 
 | Tier | When | What runs | Why |
 |---|---|---|---|
-| Fast | every push and pull request | `astl` | seconds, and it covers the 38 rules that block most pipelines |
-| Deep | merge to the default branch, or nightly | `ansible-lint` | the 13 runtime-dependent rules astl cannot decide |
+| Fast | every push and pull request | `astl` | seconds, and it covers the 40 rules that block most pipelines |
+| Deep | merge to the default branch, or nightly | `ansible-lint` | the 11 runtime-dependent rules astl cannot decide |
 
 Adopting the fast tier costs no configuration, since `--ids upstream` is the
 default. [docs/ci.md](docs/ci.md) has the full workflows: action inputs, SARIF
@@ -196,7 +261,7 @@ what does not count as unchecked.
 
 ## Rules
 
-38 static rules are supported; the full equivalence table between astl's
+40 static rules are supported; the full equivalence table between astl's
 `domain.rule[tag]` identifiers and ansible-lint's is in
 [docs/rules.md](docs/rules.md). `internal/rules/ids.go` is the single source
 both taxonomies are derived from.

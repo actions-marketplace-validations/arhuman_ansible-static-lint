@@ -52,13 +52,26 @@ type File struct {
 // Load reads and parses a YAML file. Parse errors are recorded on the returned
 // File rather than returned, because ansible-lint reports unparsable files
 // through a separate rule that is out of scope here.
+//
+// This is the bounded-I/O wrapper around LoadBytes: it is the only place the
+// MaxLintableBytes ceiling is applied, so a caller holding bytes from elsewhere
+// owes that bound itself.
 func Load(path, abs, kind string) *File {
-	f := &File{Path: path, Abs: abs, Kind: kind}
 	data, err := safeio.ReadFile(abs, safeio.MaxLintableBytes)
 	if err != nil {
-		f.Err = err
-		return f
+		return &File{Path: path, Abs: abs, Kind: kind, Err: err}
 	}
+	return LoadBytes(path, abs, kind, data)
+}
+
+// LoadBytes parses content already read from abs, for the callers that have it
+// in hand and would otherwise read the file a second time.
+//
+// data must come from a bounded read: LoadBytes applies no ceiling of its own.
+// It is not retained, but f.Text is a copy of it, so the caller is free to
+// reuse the slice.
+func LoadBytes(path, abs, kind string, data []byte) *File {
+	f := &File{Path: path, Abs: abs, Kind: kind}
 	f.Text = string(data)
 	f.Role = roleName(abs)
 	f.Noqa = parseNoqa(f.Text)

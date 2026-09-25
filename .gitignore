@@ -2,3 +2,4 @@ bin/
 coverage.out
 dist/
 coverage.full.out
+__pycache__/

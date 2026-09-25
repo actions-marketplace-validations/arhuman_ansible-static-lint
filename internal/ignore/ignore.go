@@ -23,10 +23,10 @@ import (
 	"github.com/arhuman/ansible-static-lint/internal/safeio"
 )
 
-// Filenames are the two names ansible-lint tries, in its order (IGNORE_FILE in
+// filenames are the two names ansible-lint tries, in its order (IGNORE_FILE in
 // its loaders.py). The first that exists wins and the second is not merged into
 // it, the same way config files resolve.
-var Filenames = []string{
+var filenames = []string{
 	".ansible-lint-ignore",
 	".config/ansible-lint-ignore.txt",
 }
@@ -59,7 +59,7 @@ func Load(dir, override string) (Rules, error) {
 	if override != "" {
 		return loadFile(override)
 	}
-	for _, name := range Filenames {
+	for _, name := range filenames {
 		r, err := loadFile(filepath.Join(dir, filepath.FromSlash(name)))
 		if errors.Is(err, fs.ErrNotExist) {
 			continue

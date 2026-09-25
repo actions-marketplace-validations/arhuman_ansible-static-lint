@@ -21,6 +21,9 @@ every subtag of that rule at once.
 | `task.use-module` | `command-instead-of-module` | a command runs what a dedicated module already does |
 | `task.use-command` | `command-instead-of-shell` | `shell` is used where `command` would do |
 | `task.unpinned-package` | `package-latest` | a package is installed with `state: latest` |
+| `task.unpinned-checkout` | `latest` | every version control checkout pinning check |
+| `task.unpinned-checkout[git]` | `latest[git]` | a `git` checkout tracks `HEAD` instead of a commit or tag |
+| `task.unpinned-checkout[hg]` | `latest[hg]` | an `hg` checkout tracks the default branch instead of a revision |
 | `task.partial-become` | `partial-become` | every `become_user` check |
 | `task.partial-become[play]` | `partial-become[play]` | a play sets `become_user` without `become` |
 | `task.partial-become[task]` | `partial-become[task]` | a task sets `become_user` without `become` |
@@ -39,6 +42,9 @@ every subtag of that rule at once.
 | `task.literal-compare` | `literal-compare` | a `when` compares against a literal `True` or `False` |
 | `task.empty-string-compare` | `empty-string-compare` | a `when` compares against an empty string (opt-in) |
 | `task.inline-env-var` | `inline-env-var` | a `command` sets an environment variable inline |
+| `task.free-form` | `no-free-form` | every free-form action check |
+| `task.free-form[raw]` | `no-free-form[raw]` | a `raw` call embeds `executable=` instead of passing explicit args |
+| `task.free-form[raw-non-string]` | `no-free-form[raw-non-string]` | a `raw` call is given a value that is not a string |
 | `task.implicit-template` | `avoid-implicit` | `copy` is given structured `content` instead of using `template` |
 | `task.template-extension` | `jinja-template-extension` | a template `src` does not end in `.j2` (opt-in) |
 | `task.loop-var-prefix` | `loop-var-prefix` | every role loop variable check (inert until `loop_var_prefix` is set) |

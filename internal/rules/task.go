@@ -99,9 +99,11 @@ func taskRules(f *parse.File, opt Options) []Finding {
 		out = append(out, commandInsteadOfModule(f, t)...)
 		out = append(out, commandInsteadOfShell(f, t)...)
 		out = append(out, deprecatedLocalAction(f, t)...)
+		out = append(out, noFreeForm(f, t)...)
 		out = append(out, deprecatedBareVars(f, t)...)
 		out = append(out, partialBecomeTask(f, t)...)
 		out = append(out, packageLatest(f, t)...)
+		out = append(out, latestCheckout(f, t)...)
 		out = append(out, keyOrderTask(f, t)...)
 		out = append(out, roleNamePathTask(f, t)...)
 		out = append(out, nameTask(f, t)...)
@@ -185,6 +187,65 @@ func commandInsteadOfShell(f *parse.File, t *parse.Task) []Finding {
 	return []Finding{onLine(f, t.Pos.Line, "command-instead-of-shell",
 		"Use shell only when shell functionality is required.",
 		"This task needs no shell features. Use command, it is safer and faster.")}
+}
+
+// inclusionActions take a file name rather than module arguments, so a `=` in
+// their value is part of a path and never free-form syntax.
+var inclusionActions = map[string]bool{
+	"include": true, "include_tasks": true,
+	"import_playbook": true, "import_tasks": true,
+}
+
+// freeFormShellModules accept a command line as their value, so `=` alone
+// proves nothing: only an option key written into that line does.
+var freeFormShellModules = map[string]bool{
+	"command": true, "shell": true, "win_command": true, "win_shell": true,
+}
+
+// reCmdShellOption matches an option of the command-like modules written
+// inside their free-form command line, where it is an argument to the module
+// rather than to the command being run.
+var reCmdShellOption = regexp.MustCompile(`(chdir|creates|executable|removes|stdin|stdin_add_newline|warn)=`)
+
+// noFreeForm reports the shorthand `module: key=value ...` syntax, which
+// ansible re-parses with its argument splitter and so hides quoting bugs.
+//
+// The value is read unparsed from the action key: parse.Task has already split
+// it into Args, and that split is exactly what this rule exists to discourage.
+// The message names the module as written, not its normalized form, which is
+// why it reads ModuleOriginal.
+func noFreeForm(f *parse.File, t *parse.Task) []Finding {
+	if t.IsBlock || t.ModuleOriginal == "" || inclusionActions[t.Module] {
+		return nil
+	}
+	value := t.RawGet(t.ModuleOriginal)
+	if value == nil {
+		return nil
+	}
+
+	if t.Module == "raw" {
+		if !parse.IsScalar(value) {
+			return []Finding{onLine(f, t.Pos.Line, "no-free-form[raw-non-string]",
+				"Passing a non string value to `raw` module is neither documented or supported.",
+				"This `raw` call is given a value that is not a string. Pass the command as a string.")}
+		}
+		if !strings.Contains(value.Value, "executable=") {
+			return nil
+		}
+		return []Finding{onLine(f, t.Pos.Line, "no-free-form[raw]",
+			"Avoid embedding `executable=` inside raw calls, use explicit args dictionary instead.",
+			"This `raw` call embeds `executable=`. Pass it in an explicit args mapping.")}
+	}
+
+	if !parse.IsScalar(value) || !strings.Contains(value.Value, "=") {
+		return nil
+	}
+	if freeFormShellModules[t.Module] && !reCmdShellOption.MatchString(value.Value) {
+		return nil
+	}
+	return []Finding{onLine(f, t.Pos.Line, "no-free-form",
+		fmt.Sprintf("Avoid using free-form when calling module actions. (%s)", t.ModuleOriginal),
+		"This action is written free-form. Pass its arguments as a mapping.")}
 }
 
 func deprecatedLocalAction(f *parse.File, t *parse.Task) []Finding {
@@ -297,6 +358,35 @@ func packageLatest(f *parse.File, t *parse.Task) []Finding {
 	return []Finding{onLine(f, t.Pos.Line, "package-latest",
 		"Package installs should not use latest.",
 		"This package has no pinned version. Pin one so installs stay reproducible.")}
+}
+
+// latestCheckout reports a version control checkout left on its moving default.
+//
+// Upstream reads the argument with a default equal to the unpinned value, so a
+// missing `version`/`revision` is a finding exactly as an explicit `HEAD` or
+// `default` is: `git:` with no version at all is the common case in the corpus.
+//
+// Both tags carry the same upstream message. It is the rule class's docstring,
+// not the per-tag wording in upstream's `_ids` table, which ansible-lint uses
+// for its documentation index rather than for the finding.
+func latestCheckout(f *parse.File, t *parse.Task) []Finding {
+	switch t.Module {
+	case "git":
+		if t.HasArg("version") && t.ArgText("version") != "HEAD" {
+			return nil
+		}
+		return []Finding{onLine(f, t.Pos.Line, "latest[git]",
+			"Result of the command may vary on subsequent runs.",
+			"This git checkout tracks HEAD. Pin a commit or tag to keep runs reproducible.")}
+	case "hg":
+		if t.HasArg("revision") && t.ArgText("revision") != "default" {
+			return nil
+		}
+		return []Finding{onLine(f, t.Pos.Line, "latest[hg]",
+			"Result of the command may vary on subsequent runs.",
+			"This hg checkout tracks the default branch. Pin a revision to keep runs reproducible.")}
+	}
+	return nil
 }
 
 func roleNamePathTask(f *parse.File, t *parse.Task) []Finding {
